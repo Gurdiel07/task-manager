@@ -1,9 +1,9 @@
-import { auth } from "@/lib/auth";
+import { edgeAuth } from "@/lib/auth/edge";
 import { NextResponse } from "next/server";
 
 const publicPaths = ["/", "/login", "/register", "/portal"];
 
-export default auth((req) => {
+export default edgeAuth((req) => {
   const { pathname } = req.nextUrl;
 
   const isPublicPath = publicPaths.some(
