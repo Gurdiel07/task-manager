@@ -1,0 +1,38 @@
+---
+description: Project conventions for Task & Ticketing Manager
+globs: **/*
+---
+
+# Project Conventions
+
+## Tech Stack
+- Next.js 15 (App Router), TypeScript (strict), Tailwind CSS, shadcn/ui
+- PostgreSQL + Prisma ORM, NextAuth.js v5
+- Zustand (client state), TanStack Query (server state)
+- Zod for all validation
+
+## Code Style
+- Use TypeScript strict mode. No `any` types.
+- Use Server Components by default. Add 'use client' only when needed (hooks, event handlers, browser APIs).
+- File naming: kebab-case for files and folders, PascalCase for React components.
+- Imports: use @/ path alias for all project imports.
+
+## Database
+- Always use the `db` client from `@/lib/db`.
+- Never use raw SQL — always use Prisma queries.
+- All mutations must validate input with Zod schemas from `@/lib/validators/`.
+
+## API Routes
+- All API routes return `ApiResponse<T>` type from `@/types`.
+- Use try/catch with consistent error handling.
+- Validate request body with Zod. Return 400 for validation errors, 401 for unauthorized, 404 for not found, 500 for server errors.
+
+## Components
+- Use shadcn/ui components from `@/components/ui/`.
+- Domain components go in `@/components/{domain}/` (tickets, workflows, tasks, etc.).
+- Shared components go in `@/components/shared/`.
+
+## State Management
+- Zustand stores in `@/stores/` for client-side state.
+- TanStack Query for server data fetching and caching.
+- Custom hooks in `@/hooks/`.

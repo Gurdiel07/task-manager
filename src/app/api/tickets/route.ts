@@ -1,0 +1,131 @@
+import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { apiError, apiSuccess } from "@/lib/api-response";
+import {
+  getSessionUser,
+  getTicketOrderBy,
+  getTicketWhere,
+  ticketListInclude,
+} from "@/lib/ticket-api";
+import {
+  createTicketSchema,
+  ticketListQuerySchema,
+} from "@/lib/validators/ticket";
+
+export async function GET(request: NextRequest) {
+  const session = await auth();
+  const user = getSessionUser(session);
+
+  if (!user) {
+    return apiError("Unauthorized", {
+      status: 401,
+      message: "You must be signed in to view tickets",
+    });
+  }
+
+  try {
+    const query = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const validated = ticketListQuerySchema.safeParse(query);
+
+    if (!validated.success) {
+      return apiError("Validation failed", {
+        status: 400,
+        message: validated.error.issues.map((issue) => issue.message).join(", "),
+      });
+    }
+
+    const filters = validated.data;
+    const where = getTicketWhere(filters);
+    const skip = (filters.page - 1) * filters.limit;
+
+    const [tickets, total] = await db.$transaction([
+      db.ticket.findMany({
+        where,
+        include: ticketListInclude,
+        orderBy: getTicketOrderBy(filters.sort, filters.order),
+        skip,
+        take: filters.limit,
+      }),
+      db.ticket.count({ where }),
+    ]);
+
+    return apiSuccess({
+      tickets,
+      total,
+      page: filters.page,
+      totalPages: Math.max(1, Math.ceil(total / filters.limit)),
+    });
+  } catch (error) {
+    console.error("Failed to fetch tickets:", error);
+    return apiError("Internal server error", {
+      status: 500,
+      message: "Unable to fetch tickets",
+    });
+  }
+}
+
+export async function POST(request: Request) {
+  const session = await auth();
+  const user = getSessionUser(session);
+
+  if (!user) {
+    return apiError("Unauthorized", {
+      status: 401,
+      message: "You must be signed in to create tickets",
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const validated = createTicketSchema.safeParse(body);
+
+    if (!validated.success) {
+      return apiError("Validation failed", {
+        status: 400,
+        message: validated.error.issues.map((issue) => issue.message).join(", "),
+      });
+    }
+
+    const payload = validated.data;
+
+    const ticket = await db.$transaction(async (tx) => {
+      const createdTicket = await tx.ticket.create({
+        data: {
+          title: payload.title,
+          description: payload.description,
+          priority: payload.priority,
+          category: payload.category || undefined,
+          subcategory: payload.subcategory || undefined,
+          channel: payload.channel,
+          dueDate: payload.dueDate,
+          createdById: user.id,
+          assignedToId: payload.assignedToId || undefined,
+          teamId: payload.teamId || undefined,
+        },
+        include: ticketListInclude,
+      });
+
+      await tx.ticketHistory.create({
+        data: {
+          ticketId: createdTicket.id,
+          userId: user.id,
+          action: "CREATED",
+        },
+      });
+
+      return createdTicket;
+    });
+
+    return apiSuccess(ticket, {
+      status: 201,
+      message: "Ticket created successfully",
+    });
+  } catch (error) {
+    console.error("Failed to create ticket:", error);
+    return apiError("Internal server error", {
+      status: 500,
+      message: "Unable to create ticket",
+    });
+  }
+}
