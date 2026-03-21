@@ -49,7 +49,7 @@ export default function DashboardPage() {
   const activityItems = activityQuery.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Welcome back!</h1>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <Card className="xl:col-span-2">
+        <Card className="xl:col-span-2 card-glow transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">
               Recent Tickets
@@ -182,7 +182,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-glow transition-all duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">
               Activity Feed
@@ -230,8 +230,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Tasks */}
-      <Card>
+      <Card className="card-glow transition-all duration-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base font-semibold">
             Recent Tasks

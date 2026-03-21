@@ -25,7 +25,7 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn('', className)}>
+    <Card className={cn('card-glow transition-all duration-200 hover:shadow-md', className)}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-1">

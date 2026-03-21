@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
@@ -115,15 +116,19 @@ export function AppSidebar({ user }: AppSidebarProps) {
   const isSettingsActive = pathname.startsWith('/settings');
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
+    <Sidebar collapsible="icon" className="dark:shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.05)]">
+      <SidebarHeader className="bg-gradient-to-b from-sidebar to-transparent">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
-                  <Ticket className="h-4 w-4" />
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="TaskFlow Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold text-base">TaskFlow</span>
                   <span className="text-xs text-muted-foreground">
@@ -147,6 +152,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     asChild
                     isActive={isActive(item.href, item.exact)}
                     tooltip={item.title}
+                    className="transition-all duration-200"
                   >
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
@@ -169,6 +175,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     asChild
                     isActive={isActive(item.href)}
                     tooltip={item.title}
+                    className="transition-all duration-200"
                   >
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
@@ -191,6 +198,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     <SidebarMenuButton
                       isActive={isSettingsActive}
                       tooltip="Settings"
+                      className="transition-all duration-200"
                     >
                       <Settings className="h-4 w-4" />
                       <span>Settings</span>

@@ -67,7 +67,7 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="shadow-xl border-border/50">
+    <Card className="shadow-xl border-border/50 rounded-xl dark:glass card-glow transition-all duration-200">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">
           Sign in to your account
@@ -91,6 +91,7 @@ export default function LoginPage() {
                       placeholder="name@company.com"
                       autoComplete="email"
                       disabled={isSubmitting}
+                      className="shadow-xs dark:bg-input/30"
                       {...field}
                     />
                   </FormControl>
@@ -111,6 +112,7 @@ export default function LoginPage() {
                         placeholder="Enter your password"
                         autoComplete="current-password"
                         disabled={isSubmitting}
+                        className="shadow-xs dark:bg-input/30"
                         {...field}
                       />
                       <Button
@@ -133,7 +135,7 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full active:scale-[0.98] transition-all duration-200 hover:shadow-md" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

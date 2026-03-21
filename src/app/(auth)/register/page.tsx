@@ -102,7 +102,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="shadow-xl border-border/50">
+    <Card className="shadow-xl border-border/50 rounded-xl dark:glass card-glow transition-all duration-200">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">
           Create your account
@@ -125,6 +125,7 @@ export default function RegisterPage() {
                       placeholder="John Smith"
                       autoComplete="name"
                       disabled={isSubmitting}
+                      className="shadow-xs dark:bg-input/30"
                       {...field}
                     />
                   </FormControl>
@@ -144,6 +145,7 @@ export default function RegisterPage() {
                       placeholder="name@company.com"
                       autoComplete="email"
                       disabled={isSubmitting}
+                      className="shadow-xs dark:bg-input/30"
                       {...field}
                     />
                   </FormControl>
@@ -189,6 +191,7 @@ export default function RegisterPage() {
                         placeholder="At least 8 characters"
                         autoComplete="new-password"
                         disabled={isSubmitting}
+                        className="shadow-xs dark:bg-input/30"
                         {...field}
                       />
                       <Button
@@ -224,6 +227,7 @@ export default function RegisterPage() {
                         placeholder="Re-enter your password"
                         autoComplete="new-password"
                         disabled={isSubmitting}
+                        className="shadow-xs dark:bg-input/30"
                         {...field}
                       />
                       <Button
@@ -248,7 +252,7 @@ export default function RegisterPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full active:scale-[0.98] transition-all duration-200 hover:shadow-md" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
