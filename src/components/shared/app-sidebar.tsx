@@ -21,6 +21,8 @@ import {
   Users,
   Zap,
   Activity,
+  Trophy,
+  Sliders,
 } from 'lucide-react';
 
 import {
@@ -72,10 +74,12 @@ const mainNavItems = [
 
 const insightNavItems = [
   { title: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { title: 'Leaderboard', href: '/analytics/leaderboard', icon: Trophy },
   { title: 'Knowledge Base', href: '/knowledge-base', icon: BookOpen },
 ];
 
 const settingsSubItems = [
+  { title: 'General', href: '/settings/general', icon: Sliders },
   { title: 'AI Config', href: '/settings/ai', icon: Bot },
   { title: 'SLA Policies', href: '/settings/sla', icon: Clock },
   { title: 'Channels', href: '/settings/channels', icon: Mail },

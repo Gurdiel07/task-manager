@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, apiSuccess } from "@/lib/api-response";
 
@@ -5,6 +6,11 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return apiError("Unauthorized", { status: 401, message: "You must be signed in" });
+  }
+
   const { id } = await params;
 
   try {

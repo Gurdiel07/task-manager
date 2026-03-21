@@ -1,4 +1,4 @@
-.PHONY: dev test lint typecheck build docker-up docker-down seed
+.PHONY: dev test test-watch test-coverage lint typecheck build docker-up docker-down seed db-push db-studio reset
 
 dev:
 	npm run dev

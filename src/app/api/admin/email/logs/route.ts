@@ -11,6 +11,11 @@ export async function GET() {
     return apiError("Forbidden", { status: 403, message: "Admin access required" });
   }
 
-  const logs = getRecentEmailLogs();
-  return apiSuccess(logs);
+  try {
+    const logs = getRecentEmailLogs();
+    return apiSuccess(logs);
+  } catch (error) {
+    console.error("Failed to fetch email logs:", error);
+    return apiError("Internal server error", { status: 500, message: "Unable to fetch email logs" });
+  }
 }

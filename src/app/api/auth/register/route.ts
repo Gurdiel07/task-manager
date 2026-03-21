@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { apiError, apiSuccess } from "@/lib/api-response";
 import { registerSchema } from "@/lib/validators/auth";
-import type { ApiResponse } from "@/types";
 
 export async function POST(request: Request) {
   try {
@@ -10,14 +9,10 @@ export async function POST(request: Request) {
     const validated = registerSchema.safeParse(body);
 
     if (!validated.success) {
-      return NextResponse.json<ApiResponse>(
-        {
-          success: false,
-          error: "Validation failed",
-          message: validated.error.issues.map((i) => i.message).join(", "),
-        },
-        { status: 400 }
-      );
+      return apiError("Validation failed", {
+        status: 400,
+        message: validated.error.issues.map((i) => i.message).join(", "),
+      });
     }
 
     const { name, email, password } = validated.data;
@@ -27,14 +22,10 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json<ApiResponse>(
-        {
-          success: false,
-          error: "User already exists",
-          message: "An account with this email already exists",
-        },
-        { status: 409 }
-      );
+      return apiError("User already exists", {
+        status: 409,
+        message: "An account with this email already exists",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -55,23 +46,12 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json<ApiResponse>(
-      {
-        success: true,
-        data: user,
-        message: "User created successfully",
-      },
-      { status: 201 }
-    );
+    return apiSuccess(user, { status: 201, message: "User created successfully" });
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json<ApiResponse>(
-      {
-        success: false,
-        error: "Internal server error",
-        message: "Something went wrong during registration",
-      },
-      { status: 500 }
-    );
+    return apiError("Internal server error", {
+      status: 500,
+      message: "Something went wrong during registration",
+    });
   }
 }

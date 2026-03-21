@@ -64,8 +64,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = (await request.json()) as { queue: string; action: string };
-    const { queue: queueName, action } = body;
+    const body = await request.json();
+    const queueName = typeof body?.queue === "string" ? body.queue : "";
+    const action = typeof body?.action === "string" ? body.action : "";
+
+    if (!queueName || !action) {
+      return apiError("Bad request", {
+        status: 400,
+        message: "Both 'queue' and 'action' are required strings",
+      });
+    }
 
     const found = allQueues.find((q) => q.name === queueName);
     if (!found) {

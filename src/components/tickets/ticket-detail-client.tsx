@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import {
+  CheckSquare,
   ChevronRight,
   File,
   FileImage,
@@ -68,6 +69,7 @@ import {
 } from '@/hooks/use-tickets';
 import { useTeams } from '@/hooks/use-teams';
 import { useUsers } from '@/hooks/use-users';
+import { useTasks } from '@/hooks/use-tasks';
 
 function renderDescription(description: string) {
   return description.split('\n').map((line, index) => {
@@ -183,6 +185,7 @@ export function TicketDetailClient({
   const attachmentsQuery = useTicketAttachments(id);
   const uploadAttachment = useUploadAttachment(id);
   const deleteAttachment = useDeleteAttachment(id);
+  const ticketTasksQuery = useTasks({ ticketId: id });
 
   const createComment = useCreateComment(id);
   const updateTicket = useUpdateTicket();
@@ -293,6 +296,13 @@ export function TicketDetailClient({
               <TabsTrigger value="related" className="gap-1.5">
                 <Link2 className="h-3.5 w-3.5" />
                 Related
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="gap-1.5">
+                <CheckSquare className="h-3.5 w-3.5" />
+                Tasks
+                {ticketTasksQuery.data?.tasks && ticketTasksQuery.data.tasks.length > 0 && (
+                  <span className="ml-0.5">({ticketTasksQuery.data.tasks.length})</span>
+                )}
               </TabsTrigger>
               <TabsTrigger value="attachments" className="gap-1.5">
                 <Paperclip className="h-3.5 w-3.5" />
@@ -461,6 +471,46 @@ export function TicketDetailClient({
                     <p className="py-8 text-center text-sm text-muted-foreground">
                       No related tickets found.
                     </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="tasks" className="mt-4 space-y-4">
+              <Card>
+                <CardContent className="pt-4">
+                  {ticketTasksQuery.isLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
+                    </div>
+                  ) : !ticketTasksQuery.data?.tasks?.length ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      <CheckSquare className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                      <p>No tasks linked to this ticket</p>
+                      <Button variant="outline" size="sm" className="mt-3" asChild>
+                        <Link href={`/tasks?ticketId=${id}`}>Create a Task</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {ticketTasksQuery.data.tasks.map((task: { id: string; title: string; status: string; priority: string | null; assignedTo?: { name: string | null; email: string } | null }) => (
+                        <Link
+                          key={task.id}
+                          href={`/tasks/${task.id}`}
+                          className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/50"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <CheckSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate text-sm font-medium">{task.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {task.priority && <PriorityBadge priority={task.priority} />}
+                            <StatusBadge status={task.status} />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
                   )}
                 </CardContent>
               </Card>
