@@ -123,13 +123,13 @@ export function AppSidebar({ user }: AppSidebarProps) {
               <Link href="/">
                 <img
                   src="/logo.png"
-                  alt="TaskFlow Logo"
+                  alt="Task Manager Logo"
                   width={32}
                   height={32}
                   className="rounded-lg"
                 />
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold text-base">TaskFlow</span>
+                  <span className="font-semibold text-base">Task Manager</span>
                   <span className="text-xs text-muted-foreground">
                     {getRoleLabel(user.role)}
                   </span>

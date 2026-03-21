@@ -53,7 +53,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Configure your TaskFlow workspace
+          Configure your Task Manager workspace
         </p>
       </div>
 

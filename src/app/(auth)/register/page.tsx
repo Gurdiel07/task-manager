@@ -108,7 +108,7 @@ export default function RegisterPage() {
           Create your account
         </CardTitle>
         <CardDescription className="text-center">
-          Join your team on TaskFlow
+          Join your team on Task Manager
         </CardDescription>
       </CardHeader>
       <CardContent>

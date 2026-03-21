@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'TaskFlow — Task & Ticketing Manager',
+  title: 'Task Manager — Task & Ticketing Manager',
   description: 'A modern task and ticketing management platform',
   icons: {
     icon: '/logo.png',

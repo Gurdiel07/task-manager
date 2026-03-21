@@ -23,12 +23,12 @@ export default function AuthLayout({
         >
           <img
             src="/logo.png"
-            alt="TaskFlow Logo"
+            alt="Task Manager Logo"
             width={40}
             height={40}
             className="rounded-xl shadow-lg group-hover:shadow-primary/25 transition-all duration-200 dark:glow-primary-sm"
           />
-          <span className="text-2xl font-bold text-foreground dark:gradient-text">TaskFlow</span>
+          <span className="text-2xl font-bold text-foreground dark:gradient-text">Task Manager</span>
         </Link>
         {children}
       </div>
