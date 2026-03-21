@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default function AuthLayout({
@@ -22,7 +21,7 @@ export default function AuthLayout({
           href="/"
           className="flex items-center justify-center gap-2 mb-8 group"
         >
-          <Image
+          <img
             src="/logo.png"
             alt="TaskFlow Logo"
             width={40}
