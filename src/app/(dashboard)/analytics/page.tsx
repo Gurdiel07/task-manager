@@ -489,9 +489,9 @@ export default function AnalyticsPage() {
                     </p>
                   </div>
                 </div>
-                {aiData.byType.length > 0 && (
+                {(aiData?.byType?.length ?? 0) > 0 && (
                   <ResponsiveContainer width="100%" height={140}>
-                    <BarChart data={aiData.byType} margin={{ top: 4 }}>
+                    <BarChart data={aiData?.byType ?? []} margin={{ top: 4 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis dataKey="type" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} />

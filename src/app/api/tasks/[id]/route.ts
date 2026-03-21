@@ -27,7 +27,7 @@ export async function GET(_request: Request, context: TaskRouteContext) {
       include: taskDetailInclude,
     });
 
-    if (!task) {
+    if (!task || (user.role === "CUSTOMER" && task.createdById !== user.id && task.assignedToId !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Task not found",
@@ -69,10 +69,10 @@ export async function PUT(request: Request, context: TaskRouteContext) {
 
     const existingTask = await db.task.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, status: true },
+      select: { id: true, status: true, createdById: true, assignedToId: true },
     });
 
-    if (!existingTask) {
+    if (!existingTask || (user.role === "CUSTOMER" && existingTask.createdById !== user.id && existingTask.assignedToId !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Task not found",
@@ -132,17 +132,22 @@ export async function DELETE(_request: Request, context: TaskRouteContext) {
   try {
     const { id } = await context.params;
 
-    const result = await db.task.updateMany({
+    const taskToDelete = await db.task.findFirst({
       where: { id, deletedAt: null },
-      data: { deletedAt: new Date() },
+      select: { id: true, createdById: true, assignedToId: true },
     });
 
-    if (result.count === 0) {
+    if (!taskToDelete || (user.role === "CUSTOMER" && taskToDelete.createdById !== user.id && taskToDelete.assignedToId !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Task not found",
       });
     }
+
+    await db.task.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
 
     return apiSuccess(null, { message: "Task deleted successfully" });
   } catch (error) {

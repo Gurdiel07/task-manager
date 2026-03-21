@@ -25,7 +25,7 @@ const slaKeys = {
 
 export function useSLAPolicies(isActive?: boolean) {
   return useQuery({
-    queryKey: slaKeys.policies(),
+    queryKey: [...slaKeys.policies(), { isActive }],
     queryFn: () =>
       fetchApi<SLAPolicyItem[]>(
         `/api/sla/policies${buildQueryString({ isActive: isActive !== undefined ? String(isActive) : undefined })}`

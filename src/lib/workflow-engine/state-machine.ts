@@ -68,7 +68,7 @@ export function evaluateCondition(
     case "in":
       return Array.isArray(value) && value.includes(contextValue);
     default:
-      return true;
+      return false;
   }
 }
 

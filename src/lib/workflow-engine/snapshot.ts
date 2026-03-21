@@ -47,6 +47,15 @@ export async function createSnapshot(
 export async function restoreSnapshot(snapshotId: string, _userId: string) {
   const snapshot = await db.workflowSnapshot.findUniqueOrThrow({
     where: { id: snapshotId },
+    include: {
+      instance: {
+        include: {
+          template: {
+            include: { steps: { select: { id: true } } },
+          },
+        },
+      },
+    },
   });
 
   const data = snapshot.snapshotData as {
@@ -63,6 +72,17 @@ export async function restoreSnapshot(snapshotId: string, _userId: string) {
       completedAt: string | null;
     }>;
   };
+
+  const currentStepIds = new Set(
+    snapshot.instance.template.steps.map((s) => s.id)
+  );
+  const snapshotStepIds = data.steps.map((s) => s.stepId);
+  const missingStep = snapshotStepIds.find((id) => !currentStepIds.has(id));
+  if (missingStep) {
+    throw new Error(
+      "Cannot restore snapshot: template has been modified since snapshot was taken"
+    );
+  }
 
   return db.$transaction(async (tx) => {
     await tx.workflowInstance.update({

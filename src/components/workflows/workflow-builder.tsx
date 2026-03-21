@@ -149,6 +149,12 @@ export function WorkflowBuilder({ templateId }: WorkflowBuilderProps) {
     if (!templateId) setSettingsOpen(true);
   }, [templateId]);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
   const handleAddStep = useCallback(
     async (type: WorkflowStepType) => {
       const newOrder = steps.length;

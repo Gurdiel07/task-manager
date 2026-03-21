@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -45,10 +45,17 @@ export default function GeneralSettingsPage() {
   const [timezone, setTimezone] = useState('UTC');
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
   const [isSaving, setIsSaving] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   function handleSave() {
     setIsSaving(true);
-    setTimeout(() => {
+    saveTimerRef.current = setTimeout(() => {
       setIsSaving(false);
       toast.success('Settings saved');
     }, 500);

@@ -164,7 +164,7 @@ export default function KnowledgeBasePage() {
                         {cat.name}
                       </span>
                       <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                        {cat._count.articles}
+                        {cat._count?.articles ?? 0}
                       </Badge>
                     </button>
                   ))

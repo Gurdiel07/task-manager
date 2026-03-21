@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError, apiSuccess, parseJsonBody } from "@/lib/api-response";
 import {
   canCreateInternalComment,
   getSessionUser,
@@ -75,7 +75,7 @@ export async function POST(request: Request, context: TicketRouteContext) {
 
   try {
     const { id } = await context.params;
-    const body = await request.json();
+    const body = await parseJsonBody(request);
     const validated = createCommentSchema.safeParse(body);
 
     if (!validated.success) {
@@ -152,6 +152,9 @@ export async function POST(request: Request, context: TicketRouteContext) {
     });
   } catch (error) {
     console.error("Failed to create comment:", error);
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
+      return apiError("Bad request", { status: 400, message: error.message });
+    }
     return apiError("Internal server error", {
       status: 500,
       message: "Unable to create comment",

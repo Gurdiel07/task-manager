@@ -35,7 +35,7 @@ export async function GET(_request: Request, context: TicketRouteContext) {
       include: ticketDetailInclude,
     });
 
-    if (!ticket) {
+    if (!ticket || (user.role === "CUSTOMER" && ticket.createdById !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Ticket not found",
@@ -92,10 +92,11 @@ export async function PUT(request: Request, context: TicketRouteContext) {
         assignedToId: true,
         teamId: true,
         dueDate: true,
+        createdById: true,
       },
     });
 
-    if (!existingTicket) {
+    if (!existingTicket || (user.role === "CUSTOMER" && existingTicket.createdById !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Ticket not found",
@@ -156,22 +157,22 @@ export async function DELETE(_request: Request, context: TicketRouteContext) {
   try {
     const { id } = await context.params;
 
-    const deletedTicket = await db.ticket.updateMany({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      data: {
-        deletedAt: new Date(),
-      },
+    const ticketToDelete = await db.ticket.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, createdById: true },
     });
 
-    if (deletedTicket.count === 0) {
+    if (!ticketToDelete || (user.role === "CUSTOMER" && ticketToDelete.createdById !== user.id)) {
       return apiError("Not found", {
         status: 404,
         message: "Ticket not found",
       });
     }
+
+    await db.ticket.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
 
     return apiSuccess(null, {
       message: "Ticket deleted successfully",

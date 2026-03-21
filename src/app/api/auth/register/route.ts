@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, role } = validated.data;
+    const { name, email, password } = validated.data;
 
     const existingUser = await db.user.findUnique({
       where: { email },
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         name,
         email,
         hashedPassword,
-        role: role ?? "AGENT",
+        role: "CUSTOMER",
       },
       select: {
         id: true,

@@ -115,7 +115,7 @@ export async function completeStep(
       },
     });
 
-    if (validTransitions.length === 1) {
+    if (validTransitions.length >= 1) {
       const nextStepId = validTransitions[0].toStepId;
       await tx.workflowInstanceStep.updateMany({
         where: { instanceId, stepId: nextStepId },
@@ -125,7 +125,7 @@ export async function completeStep(
         where: { id: instanceId },
         data: { currentStepId: nextStepId },
       });
-    } else if (validTransitions.length === 0) {
+    } else {
       await tx.workflowInstance.update({
         where: { id: instanceId },
         data: {
@@ -182,7 +182,7 @@ export async function skipStep(
       },
     });
 
-    if (validTransitions.length === 1) {
+    if (validTransitions.length >= 1) {
       const nextStepId = validTransitions[0].toStepId;
       await tx.workflowInstanceStep.updateMany({
         where: { instanceId, stepId: nextStepId },
@@ -192,7 +192,7 @@ export async function skipStep(
         where: { id: instanceId },
         data: { currentStepId: nextStepId },
       });
-    } else if (validTransitions.length === 0) {
+    } else {
       await tx.workflowInstance.update({
         where: { id: instanceId },
         data: {
@@ -295,7 +295,14 @@ export async function advanceToStep(
     throw new Error("Invalid transition");
   }
 
+  const currentStepId = instance.currentStepId!;
+
   return db.$transaction(async (tx) => {
+    await tx.workflowInstanceStep.updateMany({
+      where: { instanceId, stepId: currentStepId },
+      data: { status: "COMPLETED", completedAt: new Date() },
+    });
+
     await tx.workflowInstanceStep.updateMany({
       where: { instanceId, stepId: targetStepId },
       data: { status: "IN_PROGRESS", startedAt: new Date() },

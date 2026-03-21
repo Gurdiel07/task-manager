@@ -34,3 +34,11 @@ export function apiError(
     { status: options?.status ?? 500 }
   );
 }
+
+export async function parseJsonBody<T>(request: Request): Promise<T> {
+  try {
+    return await request.json() as T;
+  } catch {
+    throw new Error('Invalid JSON in request body');
+  }
+}

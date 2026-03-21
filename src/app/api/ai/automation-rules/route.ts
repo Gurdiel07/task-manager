@@ -82,6 +82,13 @@ export async function POST(request: Request) {
     });
   }
 
+  if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
+    return apiError("Forbidden", {
+      status: 403,
+      message: "Insufficient permissions",
+    });
+  }
+
   try {
     const body = await request.json();
     const validated = automationRuleCreateSchema.safeParse(body);

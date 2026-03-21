@@ -265,6 +265,7 @@ export function TicketSidebar({
               variant="ghost"
               size="icon"
               className="h-5 w-5"
+              aria-label="Add tag"
               onClick={() => setIsAddingTagFieldVisible((value) => !value)}
             >
               <span className="text-xs">+</span>
@@ -276,6 +277,7 @@ export function TicketSidebar({
                 {tagRelation.tag.name}
                 <button
                   type="button"
+                  aria-label="Remove tag"
                   onClick={() => onRemoveTag(tagRelation.tagId)}
                   disabled={isRemovingTag}
                   className="text-muted-foreground transition-colors hover:text-foreground"
@@ -320,6 +322,7 @@ export function TicketSidebar({
               variant="ghost"
               size="sm"
               className="h-6 px-2 text-xs"
+              aria-label="Toggle watch"
               onClick={() => onToggleWatcher(isWatching)}
               disabled={isTogglingWatcher || !currentUserId}
             >

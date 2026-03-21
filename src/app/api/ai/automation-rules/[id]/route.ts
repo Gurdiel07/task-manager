@@ -79,6 +79,13 @@ export async function PUT(request: Request, context: AutomationRuleRouteContext)
     });
   }
 
+  if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
+    return apiError("Forbidden", {
+      status: 403,
+      message: "Insufficient permissions",
+    });
+  }
+
   try {
     const { id } = await context.params;
     const existingRule = await db.automationRule.findUnique({
@@ -157,6 +164,13 @@ export async function DELETE(
     return apiError("Unauthorized", {
       status: 401,
       message: "You must be signed in to delete automation rules",
+    });
+  }
+
+  if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
+    return apiError("Forbidden", {
+      status: 403,
+      message: "Insufficient permissions",
     });
   }
 

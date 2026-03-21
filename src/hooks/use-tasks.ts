@@ -186,9 +186,9 @@ export function useToggleChecklistItem(taskId: string) {
       if (previousTask) {
         queryClient.setQueryData<TaskDetail>(taskKeys.detail(taskId), {
           ...previousTask,
-          checklist: previousTask.checklist.map((item) =>
+          checklist: previousTask?.checklist?.map((item) =>
             item.id === id ? { ...item, isCompleted } : item
-          ),
+          ) ?? [],
         });
       }
 

@@ -91,7 +91,7 @@ function getInitials(name: string | null, email: string) {
       .toUpperCase()
       .slice(0, 2);
   }
-  return email[0].toUpperCase();
+  return email?.[0]?.toUpperCase() ?? '?';
 }
 
 function getRoleLabel(role: string) {

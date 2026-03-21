@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess } from "@/lib/api-response";
+import { apiError, apiSuccess, parseJsonBody } from "@/lib/api-response";
 import {
   getSessionUser,
   getTicketOrderBy,
@@ -38,6 +38,10 @@ export async function GET(request: NextRequest) {
     const filters = validated.data;
     const where = getTicketWhere(filters);
     const skip = (filters.page - 1) * filters.limit;
+
+    if (user.role === "CUSTOMER") {
+      (where as Record<string, unknown>).createdById = user.id;
+    }
 
     const [tickets, total] = await db.$transaction([
       db.ticket.findMany({
@@ -77,7 +81,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const body = await parseJsonBody(request);
     const validated = createTicketSchema.safeParse(body);
 
     if (!validated.success) {
@@ -123,6 +127,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Failed to create ticket:", error);
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
+      return apiError("Bad request", { status: 400, message: error.message });
+    }
     return apiError("Internal server error", {
       status: 500,
       message: "Unable to create ticket",

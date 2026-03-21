@@ -189,14 +189,14 @@ export default function LeaderboardPage() {
               <TableBody>
                 {entries.map((entry, index) => {
                   const rank = index + 1;
-                  const style = rankStyles[rank];
+                  const style = rankStyles[rank] as typeof rankStyles[1] | undefined;
                   return (
                     <TableRow
                       key={entry.userId}
-                      className={rank <= 3 ? style.bg : undefined}
+                      className={style?.bg}
                     >
                       <TableCell className="text-center font-bold">
-                        {rank <= 3 ? (
+                        {style ? (
                           <div className="flex justify-center">{style.icon}</div>
                         ) : (
                           <span className="text-muted-foreground">#{rank}</span>
@@ -233,7 +233,7 @@ export default function LeaderboardPage() {
                         <Badge
                           variant="outline"
                           className={
-                            rank <= 3
+                            style
                               ? `${style.text} border-current`
                               : ''
                           }

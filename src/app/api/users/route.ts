@@ -21,6 +21,13 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  if (user.role === "CUSTOMER") {
+    return apiError("Forbidden", {
+      status: 403,
+      message: "Insufficient permissions",
+    });
+  }
+
   try {
     const query = Object.fromEntries(request.nextUrl.searchParams.entries());
     const validated = usersQuerySchema.safeParse(query);
