@@ -12,6 +12,8 @@ import {
   createTicketSchema,
   ticketListQuerySchema,
 } from "@/lib/validators/ticket";
+import { automationQueue } from "@/lib/queue/queues";
+import { queueEmail } from "@/lib/email/send";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -107,7 +109,11 @@ export async function POST(request: Request) {
           assignedToId: payload.assignedToId || undefined,
           teamId: payload.teamId || undefined,
         },
-        include: ticketListInclude,
+        include: {
+          ...ticketListInclude,
+          createdBy: { select: { id: true, name: true, email: true } },
+          assignedTo: { select: { id: true, name: true, email: true } },
+        },
       });
 
       await tx.ticketHistory.create({
@@ -120,6 +126,65 @@ export async function POST(request: Request) {
 
       return createdTicket;
     });
+
+    try {
+      const { emitToUser, emitToTeam } = await import("@/lib/realtime/socket-server");
+      const eventPayload = {
+        id: ticket.id,
+        title: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority,
+      };
+      if (ticket.assignedToId) {
+        emitToUser(ticket.assignedToId, "ticket:created", eventPayload);
+      }
+      if (ticket.teamId) {
+        emitToTeam(ticket.teamId, "ticket:created", eventPayload);
+      }
+    } catch {
+      // Socket.io failures must not break API responses
+    }
+
+    try {
+      await automationQueue.add("automation", {
+        ticketId: ticket.id,
+        trigger: "TICKET_CREATED",
+      });
+    } catch {
+      // Queue failures must not break API responses
+    }
+
+    const ticketUrl = `${process.env.NEXTAUTH_URL ?? ""}/tickets/${ticket.id}`;
+
+    // Email: notify assignee
+    if (ticket.assignedTo?.email) {
+      await queueEmail({
+        type: "ticket_assigned",
+        to: ticket.assignedTo.email,
+        data: {
+          ticketNumber: ticket.id,
+          ticketTitle: ticket.title,
+          ticketUrl,
+          assigneeName: ticket.assignedTo.name ?? ticket.assignedTo.email,
+        },
+      });
+    }
+
+    // Email: notify reporter (if different from assignee)
+    if (
+      ticket.createdBy?.email &&
+      ticket.createdBy.id !== ticket.assignedTo?.id
+    ) {
+      await queueEmail({
+        type: "ticket_created",
+        to: ticket.createdBy.email,
+        data: {
+          ticketNumber: ticket.id,
+          ticketTitle: ticket.title,
+          ticketUrl,
+        },
+      });
+    }
 
     return apiSuccess(ticket, {
       status: 201,

@@ -1,16 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import {
   ChevronRight,
+  File,
+  FileImage,
+  FileText,
   History,
   Link2,
+  Loader2,
   MessageSquare,
+  Paperclip,
   Search,
   Trash2,
+  UploadCloud,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { UserRole } from '@/generated/prisma/client';
 import { TicketAIPanel } from '@/components/tickets/ticket-ai-panel';
 import { TicketComments } from '@/components/tickets/ticket-comments';
@@ -45,7 +52,9 @@ import {
   useAddRelation,
   useAddTag,
   useCreateComment,
+  useDeleteAttachment,
   useTicket,
+  useTicketAttachments,
   useTicketComments,
   useTicketHistory,
   useTicketRelations,
@@ -53,6 +62,7 @@ import {
   useTickets,
   useToggleWatcher,
   useUpdateTicket,
+  useUploadAttachment,
   useRemoveRelation,
   useRemoveTag,
 } from '@/hooks/use-tickets';
@@ -133,6 +143,18 @@ interface TicketDetailClientProps {
   currentUserRole: UserRole | null;
 }
 
+function getFileIcon(mimeType: string) {
+  if (mimeType.startsWith('image/')) return FileImage;
+  if (mimeType === 'application/pdf' || mimeType.startsWith('text/')) return FileText;
+  return File;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function TicketDetailClient({
   id,
   currentUserId,
@@ -140,6 +162,8 @@ export function TicketDetailClient({
 }: TicketDetailClientProps) {
   const [relationSearch, setRelationSearch] = useState('');
   const [relationType, setRelationType] = useState<'RELATED' | 'DUPLICATE' | 'BLOCKS' | 'BLOCKED_BY' | 'PARENT' | 'CHILD'>('RELATED');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ticketQuery = useTicket(id);
   const commentsQuery = useTicketComments(id);
@@ -156,6 +180,10 @@ export function TicketDetailClient({
     order: 'desc',
   });
 
+  const attachmentsQuery = useTicketAttachments(id);
+  const uploadAttachment = useUploadAttachment(id);
+  const deleteAttachment = useDeleteAttachment(id);
+
   const createComment = useCreateComment(id);
   const updateTicket = useUpdateTicket();
   const toggleWatcher = useToggleWatcher(id);
@@ -163,6 +191,22 @@ export function TicketDetailClient({
   const removeTag = useRemoveTag(id);
   const addRelation = useAddRelation(id);
   const removeRelation = useRemoveRelation(id);
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    try {
+      await uploadAttachment.mutateAsync(file);
+      toast.success(`"${file.name}" uploaded successfully`);
+    } catch {
+      // error toast handled in hook
+    }
+  }, [uploadAttachment]);
+
+  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  }, [handleFileUpload]);
 
   const ticket = ticketQuery.data;
 
@@ -249,6 +293,13 @@ export function TicketDetailClient({
               <TabsTrigger value="related" className="gap-1.5">
                 <Link2 className="h-3.5 w-3.5" />
                 Related
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                {attachmentsQuery.data && attachmentsQuery.data.length > 0 && (
+                  <span className="ml-0.5">({attachmentsQuery.data.length})</span>
+                )}
               </TabsTrigger>
             </TabsList>
 
@@ -409,6 +460,124 @@ export function TicketDetailClient({
                   ) : (
                     <p className="py-8 text-center text-sm text-muted-foreground">
                       No related tickets found.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="attachments" className="mt-4 space-y-4">
+              {/* Upload zone */}
+              <div
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors ${
+                  isDragging
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                }`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleFileUpload(file);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                {uploadAttachment.isPending ? (
+                  <>
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Uploading…</p>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium">
+                        Drop a file here, or click to browse
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Images, PDFs, documents, spreadsheets, archives — max 10 MB
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Attachment list */}
+              <Card>
+                <CardContent className="pt-4">
+                  {attachmentsQuery.isLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={`att-skeleton-${i}`} className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-4 w-48" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : attachmentsQuery.data && attachmentsQuery.data.length > 0 ? (
+                    <div className="divide-y">
+                      {attachmentsQuery.data.map((attachment) => {
+                        const IconComponent = getFileIcon(attachment.mimeType);
+                        const canDelete =
+                          attachment.uploadedById === currentUserId ||
+                          currentUserRole === 'ADMIN' ||
+                          currentUserRole === 'MANAGER';
+
+                        return (
+                          <div
+                            key={attachment.id}
+                            className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                              <IconComponent className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <a
+                                href={attachment.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block truncate text-sm font-medium hover:text-primary hover:underline"
+                              >
+                                {attachment.fileName}
+                              </a>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {formatFileSize(attachment.fileSize)} ·{' '}
+                                {attachment.uploadedBy.name ?? attachment.uploadedBy.email} ·{' '}
+                                {format(new Date(attachment.createdAt), 'MMM d, h:mm a')}
+                              </p>
+                            </div>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="shrink-0"
+                                disabled={deleteAttachment.isPending}
+                                onClick={() => deleteAttachment.mutate(attachment.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      No attachments yet.
                     </p>
                   )}
                 </CardContent>

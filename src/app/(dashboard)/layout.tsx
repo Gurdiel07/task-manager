@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { AppSidebar } from '@/components/shared/app-sidebar';
 import { Topbar } from '@/components/shared/topbar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { SocketWrapper } from '@/components/shared/socket-wrapper';
 
 export default async function DashboardLayout({
   children,
@@ -23,12 +24,14 @@ export default async function DashboardLayout({
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar user={user} />
-      <SidebarInset>
-        <Topbar />
-        <main className="flex-1 overflow-auto p-6 dark:bg-gradient-to-br dark:from-background dark:to-background/95">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <SocketWrapper>
+      <SidebarProvider>
+        <AppSidebar user={user} />
+        <SidebarInset>
+          <Topbar />
+          <main className="flex-1 overflow-auto p-6 dark:bg-gradient-to-br dark:from-background dark:to-background/95">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </SocketWrapper>
   );
 }

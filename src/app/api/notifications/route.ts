@@ -68,6 +68,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    try {
+      const { emitToUser } = await import("@/lib/realtime/socket-server");
+      emitToUser(session.user.id!, "notification:read", {
+        all: 'all' in data && data.all === true,
+        notificationIds: 'notificationIds' in data ? data.notificationIds : undefined,
+      });
+    } catch {
+      // Socket.io failures must not break API responses
+    }
+
     return apiSuccess({ success: true });
   } catch (error) {
     console.error('Failed to mark notifications as read:', error);

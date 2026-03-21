@@ -8,6 +8,8 @@ import {
   ticketDetailInclude,
 } from "@/lib/ticket-api";
 import { updateTicketSchema } from "@/lib/validators/ticket";
+import { automationQueue } from "@/lib/queue/queues";
+import { queueEmail } from "@/lib/email/send";
 
 type TicketRouteContext = {
   params: Promise<{ id: string }>;
@@ -93,6 +95,8 @@ export async function PUT(request: Request, context: TicketRouteContext) {
         teamId: true,
         dueDate: true,
         createdById: true,
+        createdBy: { select: { id: true, name: true, email: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -127,6 +131,93 @@ export async function PUT(request: Request, context: TicketRouteContext) {
 
       return updatedTicket;
     });
+
+    try {
+      const { emitToUser, emitToTeam } = await import("@/lib/realtime/socket-server");
+      const eventPayload = {
+        id: ticket.id,
+        title: ticket.title,
+        status: ticket.status,
+        priority: ticket.priority,
+        changes: changes.map((c) => c.field),
+      };
+      if (ticket.assignedToId) {
+        emitToUser(ticket.assignedToId, "ticket:updated", eventPayload);
+      }
+      if (ticket.teamId) {
+        emitToTeam(ticket.teamId, "ticket:updated", eventPayload);
+      }
+      const watchers = await db.ticketWatcher.findMany({
+        where: { ticketId: id },
+        select: { userId: true },
+      });
+      for (const w of watchers) {
+        emitToUser(w.userId, "ticket:updated", eventPayload);
+      }
+    } catch {
+      // Socket.io failures must not break API responses
+    }
+
+    try {
+      const statusChanged =
+        validated.data.status !== undefined &&
+        validated.data.status !== existingTicket.status;
+
+      await automationQueue.add("automation", {
+        ticketId: id,
+        trigger: "TICKET_UPDATED",
+      });
+
+      if (statusChanged) {
+        await automationQueue.add("automation", {
+          ticketId: id,
+          trigger: "STATUS_CHANGED",
+        });
+      }
+    } catch {
+      // Queue failures must not break API responses
+    }
+
+    // Email notifications for assignment/status changes
+    const ticketUrl = `${process.env.NEXTAUTH_URL ?? ""}/tickets/${id}`;
+    const assigneeChanged =
+      validated.data.assignedToId !== undefined &&
+      validated.data.assignedToId !== existingTicket.assignedToId;
+    const statusChanged =
+      validated.data.status !== undefined &&
+      validated.data.status !== existingTicket.status;
+
+    if (assigneeChanged && ticket.assignedTo?.email) {
+      await queueEmail({
+        type: "ticket_assigned",
+        to: ticket.assignedTo.email,
+        data: {
+          ticketNumber: id,
+          ticketTitle: ticket.title,
+          ticketUrl,
+          assigneeName: ticket.assignedTo.name ?? ticket.assignedTo.email,
+        },
+      });
+    }
+
+    if (statusChanged) {
+      const recipients = new Set<string>();
+      if (ticket.createdBy?.email) recipients.add(ticket.createdBy.email);
+      if (ticket.assignedTo?.email) recipients.add(ticket.assignedTo.email);
+      for (const email of recipients) {
+        await queueEmail({
+          type: "ticket_status_changed",
+          to: email,
+          data: {
+            ticketNumber: id,
+            ticketTitle: ticket.title,
+            ticketUrl,
+            oldStatus: existingTicket.status,
+            newStatus: validated.data.status!,
+          },
+        });
+      }
+    }
 
     return apiSuccess(ticket, {
       message:

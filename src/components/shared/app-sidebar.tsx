@@ -20,6 +20,7 @@ import {
   Mail,
   Users,
   Zap,
+  Activity,
 } from 'lucide-react';
 
 import {
@@ -218,18 +219,44 @@ export function AppSidebar({ user }: AppSidebarProps) {
               </Collapsible>
 
               {user.role === 'ADMIN' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive('/admin')}
-                    tooltip="Admin"
-                  >
-                    <Link href="/admin">
-                      <Shield className="h-4 w-4" />
-                      <span>Admin</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive('/admin') && !pathname.startsWith('/admin/queues')}
+                      tooltip="Admin"
+                    >
+                      <Link href="/admin">
+                        <Shield className="h-4 w-4" />
+                        <span>Admin</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive('/admin/queues')}
+                      tooltip="Background Jobs"
+                    >
+                      <Link href="/admin/queues">
+                        <Activity className="h-4 w-4" />
+                        <span>Background Jobs</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive('/admin/email')}
+                      tooltip="Email"
+                    >
+                      <Link href="/admin/email">
+                        <Mail className="h-4 w-4" />
+                        <span>Email</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>

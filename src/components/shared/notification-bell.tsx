@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -14,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/use-gamification';
+import { useSocketEvent } from '@/hooks/use-socket';
 import type { Notification } from '@/types';
 
 const notificationTypeLabel: Record<string, string> = {
@@ -93,8 +96,20 @@ function NotificationItem({
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
   const notificationsQuery = useNotifications(false);
   const markReadMutation = useMarkNotificationsRead();
+
+  useSocketEvent<{ title?: string }>("notification:new", (data) => {
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    if (data.title) {
+      toast.info(`New notification: ${data.title}`);
+    }
+  });
+
+  useSocketEvent("notification:read", () => {
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  });
 
   const notifications = (notificationsQuery.data ?? []) as Notification[];
   const unreadCount = notifications.filter((n) => !n.isRead).length;

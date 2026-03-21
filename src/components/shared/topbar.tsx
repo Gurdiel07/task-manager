@@ -15,6 +15,13 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { SearchCommand } from '@/components/shared/search-command';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useSocket } from '@/hooks/use-socket';
 
 const routeLabels: Record<string, string> = {
   '': 'Dashboard',
@@ -59,6 +66,33 @@ function getBreadcrumbs(pathname: string) {
   });
 
   return crumbs;
+}
+
+function ConnectionIndicator() {
+  const { isConnected } = useSocket();
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center justify-center h-8 w-8">
+            <span
+              className={`h-2 w-2 rounded-full transition-colors ${
+                isConnected
+                  ? 'bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.4)]'
+                  : 'bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.4)]'
+              }`}
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p className="text-xs">
+            {isConnected ? 'Real-time: connected' : 'Real-time: disconnected'}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function Topbar() {
@@ -110,6 +144,8 @@ export function Topbar() {
           </Button>
 
           <NotificationBell />
+
+          <ConnectionIndicator />
         </div>
       </header>
     </>

@@ -1,8 +1,12 @@
 node_modules
 .next
 .git
-docker
+docker/Dockerfile
+docker/docker-compose.yml
 tests
 *.md
+.env
 .env.local
 .DS_Store
+# Prisma client is regenerated during docker build
+src/generated/prisma

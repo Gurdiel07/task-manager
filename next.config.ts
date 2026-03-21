@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
+  serverExternalPackages: [
+    "@prisma/adapter-pg",
+    "pg",
+    "socket.io",
+    "@socket.io/redis-adapter",
+    "ioredis",
+  ],
 };
 
 export default nextConfig;

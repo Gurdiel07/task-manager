@@ -11,7 +11,8 @@ import {
   CheckSquare,
   BarChart3,
 } from 'lucide-react';
-import { useTickets } from '@/hooks/use-tickets';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTickets, ticketKeys } from '@/hooks/use-tickets';
 import { useTasks } from '@/hooks/use-tasks';
 import { useOverviewStats, useActivityFeed } from '@/hooks/use-analytics';
 import { Button } from '@/components/ui/button';
@@ -22,8 +23,14 @@ import { StatCard } from '@/components/shared/stat-card';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { PriorityBadge } from '@/components/shared/priority-badge';
 import { getInitials } from '@/lib/ticket-options';
+import { useSocketEvent } from '@/hooks/use-socket';
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
+  useSocketEvent("ticket:created", () => {
+    queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+  });
   const today = format(new Date(), 'EEEE, MMMM d, yyyy');
 
   const overviewQuery = useOverviewStats('7d');

@@ -13,6 +13,7 @@ import {
 import { buildQueryString, fetchApi } from '@/hooks/api-client';
 import type {
   PaginatedTicketsResponse,
+  TicketAttachmentItem,
   TicketCommentItem,
   TicketDetail,
   TicketFilters,
@@ -37,6 +38,7 @@ const ticketKeys = {
   history: (id: string) => ['tickets', 'history', id] as const,
   watchers: (id: string) => ['tickets', 'watchers', id] as const,
   relations: (id: string) => ['tickets', 'relations', id] as const,
+  attachments: (id: string) => ['tickets', 'attachments', id] as const,
 };
 
 export function useTickets(filters: TicketFilters = {}) {
@@ -282,6 +284,63 @@ export function useRemoveRelation(ticketId: string) {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.relations(ticketId) });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useTicketAttachments(ticketId: string) {
+  return useQuery({
+    queryKey: ticketKeys.attachments(ticketId),
+    queryFn: () =>
+      fetchApi<TicketAttachmentItem[]>(`/api/tickets/${ticketId}/attachments`),
+    enabled: Boolean(ticketId),
+  });
+}
+
+export function useUploadAttachment(ticketId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const payload = await response.json() as { success: boolean; data?: TicketAttachmentItem; message?: string; error?: string };
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message ?? payload.error ?? 'Upload failed');
+      }
+
+      return payload.data as TicketAttachmentItem;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ticketKeys.attachments(ticketId) });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+export function useDeleteAttachment(ticketId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (attachmentId: string) =>
+      fetchApi<null>(
+        `/api/tickets/${ticketId}/attachments${buildQueryString({ attachmentId })}`,
+        { method: 'DELETE' }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ticketKeys.attachments(ticketId) });
     },
     onError: (error: Error) => {
       toast.error(error.message);

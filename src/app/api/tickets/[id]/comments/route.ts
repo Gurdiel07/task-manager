@@ -7,6 +7,7 @@ import {
   ticketCommentInclude,
 } from "@/lib/ticket-api";
 import { createCommentSchema } from "@/lib/validators/ticket";
+import { queueEmail } from "@/lib/email/send";
 
 type TicketRouteContext = {
   params: Promise<{ id: string }>;
@@ -99,7 +100,10 @@ export async function POST(request: Request, context: TicketRouteContext) {
       },
       select: {
         id: true,
+        title: true,
         firstResponseAt: true,
+        createdBy: { select: { id: true, name: true, email: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -145,6 +149,74 @@ export async function POST(request: Request, context: TicketRouteContext) {
 
       return createdComment;
     });
+
+    try {
+      const { emitToUser } = await import("@/lib/realtime/socket-server");
+
+      const watchers = await db.ticketWatcher.findMany({
+        where: { ticketId: id },
+        select: { userId: true },
+      });
+
+      const ticketForNotify = await db.ticket.findUnique({
+        where: { id },
+        select: { assignedToId: true },
+      });
+
+      const eventPayload = {
+        ticketId: id,
+        commentId: comment.id,
+        authorId: user.id,
+        isInternal: comment.isInternal,
+      };
+
+      const notifiedUserIds = new Set<string>();
+      for (const w of watchers) {
+        if (w.userId !== user.id) {
+          notifiedUserIds.add(w.userId);
+        }
+      }
+      if (ticketForNotify?.assignedToId && ticketForNotify.assignedToId !== user.id) {
+        notifiedUserIds.add(ticketForNotify.assignedToId);
+      }
+      for (const uid of notifiedUserIds) {
+        emitToUser(uid, "ticket:comment", eventPayload);
+      }
+    } catch {
+      // Socket.io failures must not break API responses
+    }
+
+    // Queue email notifications for comment (skip internal comments)
+    if (!validated.data.isInternal) {
+      const ticketUrl = `${process.env.NEXTAUTH_URL ?? ""}/tickets/${id}`;
+      const commenterName = user.name ?? user.email;
+      const commentPreview =
+        validated.data.content.length > 200
+          ? validated.data.content.slice(0, 197) + "..."
+          : validated.data.content;
+
+      const recipients = new Set<string>();
+      if (ticket.createdBy?.email && ticket.createdBy.id !== user.id) {
+        recipients.add(ticket.createdBy.email);
+      }
+      if (ticket.assignedTo?.email && ticket.assignedTo.id !== user.id) {
+        recipients.add(ticket.assignedTo.email);
+      }
+
+      for (const email of recipients) {
+        await queueEmail({
+          type: "ticket_commented",
+          to: email,
+          data: {
+            ticketNumber: id,
+            ticketTitle: ticket.title,
+            ticketUrl,
+            commenterName,
+            commentPreview,
+          },
+        });
+      }
+    }
 
     return apiSuccess(comment, {
       status: 201,

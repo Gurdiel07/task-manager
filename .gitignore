@@ -47,6 +47,10 @@ prisma/*.db
 prisma/*.db-journal
 /src/generated/prisma
 
+# uploads (local filesystem storage — not committed)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # IDE
 .vscode/
 *.swp

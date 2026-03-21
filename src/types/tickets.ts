@@ -113,6 +113,18 @@ export interface TicketRelationItem {
   createdAt: string;
 }
 
+export interface TicketAttachmentItem {
+  id: string;
+  ticketId: string;
+  uploadedById: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  uploadedBy: UserSummary;
+}
+
 export interface PaginatedTicketsResponse {
   tickets: TicketListItem[];
   total: number;

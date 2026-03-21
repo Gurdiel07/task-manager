@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Priority, TicketStatus } from '@/generated/prisma/client';
 import { TicketFilters } from '@/components/tickets/ticket-filters';
 import { TicketKanban } from '@/components/tickets/ticket-kanban';
@@ -11,12 +12,22 @@ import { TicketTable } from '@/components/tickets/ticket-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTickets, useUpdateTicket } from '@/hooks/use-tickets';
+import { useTickets, useUpdateTicket, ticketKeys } from '@/hooks/use-tickets';
 import { useUsers } from '@/hooks/use-users';
+import { useSocketEvent } from '@/hooks/use-socket';
 
 export default function TicketsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+
+  useSocketEvent("ticket:created", () => {
+    queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+  });
+
+  useSocketEvent("ticket:updated", () => {
+    queryClient.invalidateQueries({ queryKey: ticketKeys.all });
+  });
 
   const filters = useMemo(
     () => ({
