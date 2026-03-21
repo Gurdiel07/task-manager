@@ -374,6 +374,20 @@ export default function AutomationSettingsPage() {
 
   const isSubmitting = createRule.isPending || updateRule.isPending;
 
+  if (rulesQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {rulesQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => rulesQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   function openCreateDialog() {
     setEditingRule(null);
     setDialogOpen(true);

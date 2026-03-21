@@ -8,7 +8,6 @@ import {
   History,
   Link2,
   MessageSquare,
-  Paperclip,
   Search,
   Trash2,
 } from 'lucide-react';
@@ -247,10 +246,6 @@ export function TicketDetailClient({
                 <History className="h-3.5 w-3.5" />
                 History
               </TabsTrigger>
-              <TabsTrigger value="attachments" className="gap-1.5">
-                <Paperclip className="h-3.5 w-3.5" />
-                Attachments
-              </TabsTrigger>
               <TabsTrigger value="related" className="gap-1.5">
                 <Link2 className="h-3.5 w-3.5" />
                 Related
@@ -301,23 +296,6 @@ export function TicketDetailClient({
                             </div>
                           </div>
                         ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="attachments" className="mt-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-10 text-center">
-                    <Paperclip className="mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">No attachments yet</p>
-                    <p className="mb-3 text-xs text-muted-foreground">
-                      Attachment uploads are not implemented yet.
-                    </p>
-                    <Button size="sm" variant="outline" disabled>
-                      Upload File
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -469,6 +447,9 @@ export function TicketDetailClient({
               if (teamId !== ticket.teamId) {
                 updateTicket.mutate({ id, data: { teamId } });
               }
+            }}
+            onDueDateChange={(dueDate) => {
+              updateTicket.mutate({ id, data: { dueDate } });
             }}
             onToggleWatcher={(isWatching) => toggleWatcher.mutate(isWatching)}
             onAddTag={(name) => addTag.mutateAsync({ name })}

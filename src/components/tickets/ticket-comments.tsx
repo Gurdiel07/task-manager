@@ -46,6 +46,11 @@ export function TicketComments({
     setIsInternal(false);
   }
 
+  function handleFormSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    void handleSubmit();
+  }
+
   return (
     <div className="space-y-3">
       {loading
@@ -110,33 +115,41 @@ export function TicketComments({
 
       <Card>
         <CardContent className="space-y-3 pt-4">
-          <Textarea
-            placeholder="Add a comment or internal note..."
-            className="min-h-24 resize-none"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-          />
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="internal-note"
-                checked={isInternal}
-                onCheckedChange={setIsInternal}
-                disabled={!canCreateInternal}
-              />
-              <Label htmlFor="internal-note" className="cursor-pointer text-sm">
-                Internal note
-              </Label>
+          <form onSubmit={handleFormSubmit}>
+            <Textarea
+              placeholder="Add a comment or internal note..."
+              className="min-h-24 resize-none"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  void handleSubmit();
+                }
+              }}
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="internal-note"
+                  checked={isInternal}
+                  onCheckedChange={setIsInternal}
+                  disabled={!canCreateInternal}
+                />
+                <Label htmlFor="internal-note" className="cursor-pointer text-sm">
+                  Internal note
+                </Label>
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSubmitting || !content.trim()}
+              >
+                <Send className="mr-2 h-3.5 w-3.5" />
+                Add Comment
+              </Button>
             </div>
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !content.trim()}
-            >
-              <Send className="mr-2 h-3.5 w-3.5" />
-              Add Comment
-            </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

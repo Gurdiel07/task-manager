@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -10,6 +11,8 @@ import {
   Pencil,
   Loader2,
   GitBranch,
+  Power,
+  PowerOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +25,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useWorkflow, useWorkflowInstances } from '@/hooks/use-workflows';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { useWorkflow, useWorkflowInstances, useUpdateWorkflow } from '@/hooks/use-workflows';
+import { WorkflowInstancePanel } from '@/components/workflows/workflow-instance-panel';
 import { stepTypeConfig } from '@/components/workflows/step-node';
 import type { InstanceStatus } from '@/generated/prisma/client';
 
@@ -46,6 +57,9 @@ export default function WorkflowDetailPage() {
   const { data: workflow, isLoading: loadingTemplate } = useWorkflow(id);
   const { data: instances, isLoading: loadingInstances } =
     useWorkflowInstances(id);
+  const updateWorkflow = useUpdateWorkflow();
+
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   if (loadingTemplate) {
     return (
@@ -70,9 +84,16 @@ export default function WorkflowDetailPage() {
     );
   }
 
+  function handleToggleActive() {
+    if (!workflow) return;
+    updateWorkflow.mutate({
+      id: workflow.id,
+      data: { isActive: !workflow.isActive },
+    });
+  }
+
   return (
     <div className="space-y-6">
-      {/* Breadcrumb + header */}
       <div>
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
           <Link href="/workflows" className="hover:text-foreground">
@@ -106,6 +127,24 @@ export default function WorkflowDetailPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToggleActive}
+              disabled={updateWorkflow.isPending}
+            >
+              {workflow.isActive ? (
+                <>
+                  <PowerOff className="h-3.5 w-3.5 mr-1" />
+                  Deactivate
+                </>
+              ) : (
+                <>
+                  <Power className="h-3.5 w-3.5 mr-1" />
+                  Activate
+                </>
+              )}
+            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href={`/workflows/builder?templateId=${workflow.id}`}>
                 <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -116,7 +155,6 @@ export default function WorkflowDetailPage() {
         </div>
       </div>
 
-      {/* Workflow steps preview */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
@@ -178,7 +216,6 @@ export default function WorkflowDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Instances */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
@@ -213,14 +250,28 @@ export default function WorkflowDetailPage() {
               </TableHeader>
               <TableBody>
                 {instances.map((instance) => (
-                  <TableRow key={instance.id}>
+                  <TableRow
+                    key={instance.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedInstanceId(instance.id)}
+                  >
                     <TableCell>
                       <div>
-                        <p className="text-sm font-medium">
+                        <Link
+                          href={`/tickets/${instance.ticket.id}`}
+                          className="text-sm font-medium hover:underline text-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {instance.ticket.title}
-                        </p>
+                        </Link>
                         <p className="text-xs text-muted-foreground font-mono">
-                          #{instance.ticket.number}
+                          <Link
+                            href={`/tickets/${instance.ticket.id}`}
+                            className="hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            #{instance.ticket.number}
+                          </Link>
                         </p>
                       </div>
                     </TableCell>
@@ -250,6 +301,25 @@ export default function WorkflowDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Sheet
+        open={selectedInstanceId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInstanceId(null);
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Workflow Instance</SheetTitle>
+            <SheetDescription>Manage the workflow instance steps and status</SheetDescription>
+          </SheetHeader>
+          {selectedInstanceId && (
+            <div className="mt-4">
+              <WorkflowInstancePanel instanceId={selectedInstanceId} />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

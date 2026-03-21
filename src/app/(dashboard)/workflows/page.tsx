@@ -12,8 +12,23 @@ import type { WorkflowFilters } from '@/types/workflows';
 
 export default function WorkflowsPage() {
   const [filters, setFilters] = useState<WorkflowFilters>({});
-  const { data, isLoading } = useWorkflows(filters);
+  const workflowsQuery = useWorkflows(filters);
+  const { data, isLoading } = workflowsQuery;
   const templates = data?.templates ?? [];
+
+  if (workflowsQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {workflowsQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => workflowsQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

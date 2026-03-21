@@ -252,13 +252,28 @@ function PolicyFormDialog({
 }
 
 export default function SLASettingsPage() {
-  const { data: policies, isLoading } = useSLAPolicies();
+  const slaPoliciesQuery = useSLAPolicies();
+  const { data: policies, isLoading } = slaPoliciesQuery;
   const updateMutation = useUpdateSLAPolicy();
   const deleteMutation = useDeleteSLAPolicy();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editPolicy, setEditPolicy] = useState<SLAPolicyItem | null>(null);
   const [deletePolicy, setDeletePolicy] = useState<SLAPolicyItem | null>(null);
+
+  if (slaPoliciesQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {slaPoliciesQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => slaPoliciesQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

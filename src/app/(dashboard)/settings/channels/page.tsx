@@ -228,12 +228,27 @@ function ChannelFormDialog({
 }
 
 export default function ChannelsSettingsPage() {
-  const { data: channels, isLoading } = useChannels();
+  const channelsQuery = useChannels();
+  const { data: channels, isLoading } = channelsQuery;
   const deleteMutation = useDeleteChannel();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editChannel, setEditChannel] = useState<ChannelItem | null>(null);
   const [deleteChannel, setDeleteChannel] = useState<ChannelItem | null>(null);
+
+  if (channelsQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {channelsQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => channelsQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

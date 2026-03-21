@@ -16,6 +16,7 @@ export interface AdminUserItem {
 }
 
 const updateUserSchema = z.object({
+  name: z.string().min(1).optional(),
   role: z.enum(['ADMIN', 'MANAGER', 'AGENT', 'CUSTOMER']).optional(),
   isActive: z.boolean().optional(),
 });

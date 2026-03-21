@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, BookOpen, Eye, ThumbsUp, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,8 +39,10 @@ export default function KnowledgeBasePage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [status, setStatus] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: categories, isLoading: categoriesLoading } = useKBCategories();
+  const categoriesQuery = useKBCategories();
+  const { data: categories, isLoading: categoriesLoading } = categoriesQuery;
 
   const filters: KBArticleFilters = {
     search: debouncedSearch || undefined,
@@ -48,12 +50,49 @@ export default function KnowledgeBasePage() {
     categoryId: categoryId || undefined,
     limit: 30,
   };
-  const { data: articlesData, isLoading: articlesLoading } = useKBArticles(filters);
+  const articlesQuery = useKBArticles(filters);
+  const { data: articlesData, isLoading: articlesLoading } = articlesQuery;
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   function handleSearchChange(value: string) {
     setSearch(value);
-    const timer = setTimeout(() => setDebouncedSearch(value), 400);
-    return () => clearTimeout(timer);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => setDebouncedSearch(value), 400);
+  }
+
+  const failedQuery = categoriesQuery.isError
+    ? categoriesQuery
+    : articlesQuery.isError
+    ? articlesQuery
+    : null;
+
+  if (failedQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {failedQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            if (categoriesQuery.isError) void categoriesQuery.refetch();
+            if (articlesQuery.isError) void articlesQuery.refetch();
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
   }
 
   return (

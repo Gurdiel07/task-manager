@@ -310,6 +310,20 @@ export default function AISettingsPage() {
   const updateProvider = useUpdateAIProvider();
   const deleteProvider = useDeleteAIProvider();
 
+  if (providersQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {providersQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => providersQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   const defaultProvider = useMemo(
     () => providersQuery.data?.find((provider) => provider.isDefault) ?? null,
     [providersQuery.data]

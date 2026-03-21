@@ -11,7 +11,7 @@ import { TicketTable } from '@/components/tickets/ticket-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTickets } from '@/hooks/use-tickets';
+import { useTickets, useUpdateTicket } from '@/hooks/use-tickets';
 import { useUsers } from '@/hooks/use-users';
 
 export default function TicketsPage() {
@@ -34,6 +34,30 @@ export default function TicketsPage() {
 
   const ticketsQuery = useTickets(filters);
   const usersQuery = useUsers();
+  const updateTicket = useUpdateTicket();
+
+  if (ticketsQuery.isError || usersQuery.isError) {
+    const errQuery = ticketsQuery.isError ? ticketsQuery : usersQuery;
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {errQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            if (ticketsQuery.isError) void ticketsQuery.refetch();
+            if (usersQuery.isError) void usersQuery.refetch();
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   const ticketsByStatus = useMemo(
     () => ({
@@ -197,6 +221,9 @@ export default function TicketsPage() {
           <TicketKanban
             ticketsByStatus={ticketsByStatus}
             loading={ticketsQuery.isLoading}
+            onStatusChange={(ticketId, newStatus) =>
+              updateTicket.mutate({ id: ticketId, data: { status: newStatus } })
+            }
           />
         </TabsContent>
       </Tabs>

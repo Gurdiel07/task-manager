@@ -394,8 +394,23 @@ function CreateTeamDialog({
 }
 
 export default function TeamsSettingsPage() {
-  const { data: teams, isLoading } = useTeams();
+  const teamsQuery = useTeams();
+  const { data: teams, isLoading } = teamsQuery;
   const [createOpen, setCreateOpen] = useState(false);
+
+  if (teamsQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {teamsQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => teamsQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

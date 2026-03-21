@@ -48,6 +48,40 @@ export default function DashboardPage() {
   const activityQuery = useActivityFeed();
   const activityItems = activityQuery.data ?? [];
 
+  const failedQuery = overviewQuery.isError
+    ? overviewQuery
+    : recentTicketsQuery.isError
+    ? recentTicketsQuery
+    : recentTasksQuery.isError
+    ? recentTasksQuery
+    : activityQuery.isError
+    ? activityQuery
+    : null;
+
+  if (failedQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {failedQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            void overviewQuery.refetch();
+            void recentTicketsQuery.refetch();
+            void recentTasksQuery.refetch();
+            void activityQuery.refetch();
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between">

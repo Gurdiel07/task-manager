@@ -62,6 +62,29 @@ export default function TasksPage() {
     [router, searchParams]
   );
 
+  if (tasksQuery.isError || usersQuery.isError) {
+    const errQuery = tasksQuery.isError ? tasksQuery : usersQuery;
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {errQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            if (tasksQuery.isError) void tasksQuery.refetch();
+            if (usersQuery.isError) void usersQuery.refetch();
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import { useLeaderboard } from '@/hooks/use-analytics';
 import { useBadges } from '@/hooks/use-gamification';
+import { Button } from '@/components/ui/button';
 import type { AnalyticsPeriod } from '@/types/analytics';
 
 function getInitials(name: string): string {
@@ -69,6 +70,34 @@ export default function LeaderboardPage() {
   const entries = leaderboardQuery.data ?? [];
   const badges = badgesQuery.data ?? [];
 
+  const failedQuery = leaderboardQuery.isError
+    ? leaderboardQuery
+    : badgesQuery.isError
+    ? badgesQuery
+    : null;
+
+  if (failedQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {failedQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            if (leaderboardQuery.isError) void leaderboardQuery.refetch();
+            if (badgesQuery.isError) void badgesQuery.refetch();
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -95,10 +124,10 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Top 3 Podium */}
-      {!leaderboardQuery.isLoading && entries.length >= 3 && (
+      {!leaderboardQuery.isLoading && entries.length >= 1 && (
         <div className="grid grid-cols-3 gap-4">
-          {[entries[1], entries[0], entries[2]].map((entry, podiumIndex) => {
-            if (!entry) return null;
+          {([entries[1], entries[0], entries[2]] as (typeof entries[0] | undefined)[]).map((entry, podiumIndex) => {
+            if (!entry) return <div key={`podium-empty-${podiumIndex}`} />;
             const rank = podiumIndex === 1 ? 1 : podiumIndex === 0 ? 2 : 3;
             const style = rankStyles[rank];
             return (

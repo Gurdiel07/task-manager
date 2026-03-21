@@ -39,7 +39,7 @@ const settingsCategories = [
     iconClassName: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
   },
   {
-    href: '/settings',
+    href: '/settings/general',
     icon: Settings,
     title: 'General',
     description: 'Application preferences, notifications, and general configuration',

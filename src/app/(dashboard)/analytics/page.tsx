@@ -5,7 +5,6 @@ import {
   BarChart3,
   TrendingUp,
   Clock,
-  Shield,
   CheckSquare,
   Ticket,
   AlertTriangle,
@@ -46,6 +45,7 @@ import {
   useTeamPerformance,
   useTicketVolume,
 } from '@/hooks/use-analytics';
+import { Button } from '@/components/ui/button';
 import type { AnalyticsPeriod } from '@/types/analytics';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -91,6 +91,33 @@ export default function AnalyticsPage() {
   const teamsData = teamsQuery.data ?? [];
   const slaData = slaQuery.data ?? [];
   const aiData = aiQuery.data;
+
+  const failedQuery = [overviewQuery, volumeQuery, distributionQuery, teamsQuery, slaQuery, aiQuery].find(
+    (q) => q.isError
+  );
+
+  if (failedQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {failedQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            [overviewQuery, volumeQuery, distributionQuery, teamsQuery, slaQuery, aiQuery]
+              .filter((q) => q.isError)
+              .forEach((q) => void q.refetch());
+          }}
+        >
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

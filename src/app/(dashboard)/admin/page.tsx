@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Users, UserCheck, Shield, Pencil, MoreHorizontal, UserX, UserPlus } from 'lucide-react';
@@ -9,6 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StatCard } from '@/components/shared/stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -59,7 +68,7 @@ function useAdminUsers() {
 function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { role?: UserRole; isActive?: boolean } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { role?: UserRole; isActive?: boolean; name?: string } }) =>
       fetchApi<AdminUserItem>(`/api/admin/users?id=${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
@@ -67,6 +76,24 @@ function useUpdateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
       toast.success('User updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+function useInviteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; email: string; password: string; role: UserRole }) =>
+      fetchApi<unknown>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
+      toast.success('User invited successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -93,12 +120,74 @@ function getInitials(name: string | null, email: string): string {
 export default function AdminPage() {
   const usersQuery = useAdminUsers();
   const updateUser = useUpdateUser();
+  const inviteUser = useInviteUser();
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePassword, setInvitePassword] = useState('');
+  const [inviteRole, setInviteRole] = useState<UserRole>('AGENT');
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editUser, setEditUser] = useState<AdminUserItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('AGENT');
+
+  if (usersQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-destructive font-medium">Failed to load data</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {usersQuery.error?.message ?? 'An unexpected error occurred'}
+        </p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => usersQuery.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   const users = usersQuery.data ?? [];
   const totalUsers = users.length;
   const activeAgents = users.filter((u) => u.isActive && (u.role === 'AGENT' || u.role === 'MANAGER')).length;
   const adminCount = users.filter((u) => u.role === 'ADMIN').length;
   const customerCount = users.filter((u) => u.role === 'CUSTOMER').length;
+
+  function openEditDialog(user: AdminUserItem) {
+    setEditUser(user);
+    setEditName(user.name ?? '');
+    setEditRole(user.role);
+    setEditOpen(true);
+  }
+
+  function handleInviteSubmit() {
+    if (!inviteName.trim() || !inviteEmail.trim() || !invitePassword.trim()) return;
+    inviteUser.mutate(
+      { name: inviteName, email: inviteEmail, password: invitePassword, role: inviteRole },
+      {
+        onSuccess: () => {
+          setInviteOpen(false);
+          setInviteName('');
+          setInviteEmail('');
+          setInvitePassword('');
+          setInviteRole('AGENT');
+        },
+      }
+    );
+  }
+
+  function handleEditSubmit() {
+    if (!editUser) return;
+    updateUser.mutate(
+      { id: editUser.id, data: { name: editName, role: editRole } },
+      {
+        onSuccess: () => {
+          setEditOpen(false);
+          setEditUser(null);
+        },
+      }
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -109,7 +198,7 @@ export default function AdminPage() {
             Manage users, roles, and system settings
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setInviteOpen(true)}>
           <Users className="mr-2 h-4 w-4" />
           Invite User
         </Button>
@@ -249,7 +338,7 @@ export default function AdminPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem disabled>
+                          <DropdownMenuItem onClick={() => openEditDialog(user)}>
                             <Pencil className="mr-2 h-3.5 w-3.5" />
                             Edit User
                           </DropdownMenuItem>
@@ -285,6 +374,82 @@ export default function AdminPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Full name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="user@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input type="password" value={invitePassword} onChange={(e) => setInvitePassword(e.target.value)} placeholder="Min. 6 characters" />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleInviteSubmit}
+              disabled={inviteUser.isPending || !inviteName.trim() || !inviteEmail.trim() || !invitePassword.trim()}
+            >
+              {inviteUser.isPending ? 'Creating...' : 'Create User'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Full name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleEditSubmit}
+              disabled={updateUser.isPending || !editName.trim()}
+            >
+              {updateUser.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

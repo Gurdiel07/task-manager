@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { createTaskSchema } from '@/lib/validators/task';
 import { useUsers } from '@/hooks/use-users';
-import type { TaskListItem } from '@/types/tasks';
+import { useTickets } from '@/hooks/use-tickets';
 
 type CreateTaskFormValues = z.input<typeof createTaskSchema>;
 
@@ -44,6 +44,7 @@ export function TaskForm({
   submitLabel = 'Create Task',
 }: TaskFormProps) {
   const usersQuery = useUsers();
+  const ticketsQuery = useTickets({ limit: 50 });
 
   const form = useForm<CreateTaskFormValues>({
     resolver: zodResolver(createTaskSchema),
@@ -63,7 +64,8 @@ export function TaskForm({
     if (defaultValues) {
       form.reset({ ...form.getValues(), ...defaultValues });
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValues]);
 
   const handleSubmit = form.handleSubmit((data) => {
     const cleaned: CreateTaskFormValues = {
@@ -153,6 +155,29 @@ export function TaskForm({
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Link to Ticket</Label>
+        <Select
+          value={form.watch('ticketId') ?? 'none'}
+          onValueChange={(value) =>
+            form.setValue('ticketId', value === 'none' ? undefined : value)
+          }
+          disabled={ticketsQuery.isLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="No linked ticket" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No linked ticket</SelectItem>
+            {(ticketsQuery.data?.tickets ?? []).map((ticket) => (
+              <SelectItem key={ticket.id} value={ticket.id}>
+                #{ticket.number} {ticket.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { differenceInMinutes, format } from 'date-fns';
-import { AlertCircle, CalendarDays, Clock, Eye, Tag, UserPlus } from 'lucide-react';
+import { AlertCircle, CalendarDays, Clock, Eye, Tag, UserPlus, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -40,6 +42,7 @@ interface TicketSidebarProps {
   onAssigneeChange: (assigneeId: string | null) => void;
   onTeamChange: (teamId: string | null) => void;
   onToggleWatcher: (isWatching: boolean) => void;
+  onDueDateChange: (date: Date | null) => void;
   onAddTag: (name: string) => Promise<unknown>;
   onRemoveTag: (tagId: string) => void;
 }
@@ -59,11 +62,13 @@ export function TicketSidebar({
   onAssigneeChange,
   onTeamChange,
   onToggleWatcher,
+  onDueDateChange,
   onAddTag,
   onRemoveTag,
 }: TicketSidebarProps) {
   const [isAddingTagFieldVisible, setIsAddingTagFieldVisible] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [dueDateOpen, setDueDateOpen] = useState(false);
 
   const isWatching = useMemo(
     () => watchers.some((watcher) => watcher.userId === currentUserId),
@@ -199,16 +204,48 @@ export function TicketSidebar({
             <CalendarDays className="mr-1 inline h-3 w-3" />
             Due Date
           </p>
-          <p className="text-sm font-medium">
-            {ticket.dueDate
-              ? format(new Date(ticket.dueDate), 'MMM d, yyyy')
-              : 'No due date'}
-          </p>
+          <div className="flex items-center gap-1">
+            <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 flex-1 justify-start text-xs font-normal"
+                  disabled={isUpdating}
+                >
+                  {ticket.dueDate
+                    ? format(new Date(ticket.dueDate), 'MMM d, yyyy')
+                    : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={ticket.dueDate ? new Date(ticket.dueDate) : undefined}
+                  onSelect={(date) => {
+                    onDueDateChange(date ?? null);
+                    setDueDateOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+            {ticket.dueDate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                disabled={isUpdating}
+                onClick={() => onDueDateChange(null)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div>
           <p className="mb-1.5 text-xs text-muted-foreground">Channel</p>
-          <p className="text-sm">{ticket.channel}</p>
+          <p className="text-sm">{ticket.channel ?? '—'}</p>
         </div>
 
         <div>
