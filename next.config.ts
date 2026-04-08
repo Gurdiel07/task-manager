@@ -3,11 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: [
-    "@prisma/adapter-pg",
-    "pg",
+    "better-sqlite3",
+    "@prisma/adapter-better-sqlite3",
     "socket.io",
-    "@socket.io/redis-adapter",
-    "ioredis",
+    "node-cron",
   ],
 };
 

@@ -48,7 +48,7 @@ jobs:
       - run: npx prisma generate
       - run: npm run build
         env:
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/test"
+          DATABASE_URL: "file:./data/taskmanager.db"
           NEXTAUTH_SECRET: "test-secret-for-ci"
 
   docker:

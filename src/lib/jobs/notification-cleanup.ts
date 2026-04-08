@@ -1,7 +1,6 @@
-import type { Job } from "bullmq";
 import { db } from "@/lib/db";
 
-export default async function notificationCleanupProcessor(_job: Job) {
+export async function cleanupNotifications(): Promise<void> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const result = await db.notification.deleteMany({
@@ -11,5 +10,5 @@ export default async function notificationCleanupProcessor(_job: Job) {
     },
   });
 
-  console.log(`Cleaned up ${result.count} old notifications`);
+  console.log(`[Cleanup] Removed ${result.count} old notifications`);
 }

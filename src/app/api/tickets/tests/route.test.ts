@@ -31,8 +31,8 @@ vi.mock("@/lib/ticket-api", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/queue/queues", () => ({
-  automationQueue: { add: vi.fn() },
+vi.mock("@/lib/jobs/automation", () => ({
+  runAutomation: vi.fn(),
 }));
 
 vi.mock("@/lib/email/send", () => ({

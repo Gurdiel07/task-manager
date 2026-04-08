@@ -62,10 +62,7 @@ export async function POST(request: Request, context: TicketRouteContext) {
         ensuredTag =
           (await tx.ticketTag.findFirst({
             where: {
-              name: {
-                equals: validated.data.name,
-                mode: 'insensitive',
-              },
+              name: { equals: validated.data.name },
             },
           })) ??
           (await tx.ticketTag.create({

@@ -124,18 +124,8 @@ export function getTicketWhere(filters: TicketListQueryInput): Prisma.TicketWher
   if (filters.search) {
     andFilters.push({
       OR: [
-        {
-          title: {
-            contains: filters.search,
-            mode: "insensitive",
-          },
-        },
-        {
-          description: {
-            contains: filters.search,
-            mode: "insensitive",
-          },
-        },
+        { title: { contains: filters.search } },
+        { description: { contains: filters.search } },
       ],
     });
   }

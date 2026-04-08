@@ -1,9 +1,8 @@
-import type { Job } from "bullmq";
 import { db } from "@/lib/db";
 import { emitToUser } from "@/lib/realtime/socket-server";
-import { queueEmail } from "@/lib/email/send";
+import { sendEmailDirect } from "@/lib/email/send";
 
-export default async function slaCheckProcessor(_job: Job) {
+export async function checkSlaBreaches(): Promise<void> {
   const openTickets = await db.ticket.findMany({
     where: {
       status: { notIn: ["RESOLVED", "CLOSED"] },
@@ -118,12 +117,11 @@ export default async function slaCheckProcessor(_job: Job) {
               policyId: policy.id,
             });
           } catch {
-            // Real-time emit failures must not break the worker
+            // Real-time emit failures must not break the scheduler
           }
 
-          // Queue email for the assigned user (who has a known email)
           if (userId === ticket.assignedToId && ticket.assignedTo?.email) {
-            await queueEmail({
+            sendEmailDirect({
               type: "sla_breach",
               to: ticket.assignedTo.email,
               data: {
@@ -133,7 +131,7 @@ export default async function slaCheckProcessor(_job: Job) {
                 breachType: breach.type,
                 policyName: policy.name,
               },
-            });
+            }).catch(console.error);
           }
         }
       }
@@ -141,6 +139,6 @@ export default async function slaCheckProcessor(_job: Job) {
   }
 
   console.log(
-    `SLA check complete: ${openTickets.length} tickets checked, ${breachCount} breaches found`
+    `[SLA] Check complete: ${openTickets.length} tickets checked, ${breachCount} breaches found`
   );
 }

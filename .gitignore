@@ -47,6 +47,12 @@ prisma/*.db
 prisma/*.db-journal
 /src/generated/prisma
 
+# sqlite database files
+/data/*.db
+/data/*.db-journal
+/data/*.db-shm
+/data/*.db-wal
+
 # uploads (local filesystem storage — not committed)
 /public/uploads/*
 !/public/uploads/.gitkeep

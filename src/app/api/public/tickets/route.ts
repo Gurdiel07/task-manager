@@ -35,8 +35,12 @@ export async function POST(request: Request) {
       },
     });
 
+    const last = await db.ticket.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
+    const nextNumber = (last?.number ?? 0) + 1;
+
     const ticket = await db.ticket.create({
       data: {
+        number: nextNumber,
         title,
         description,
         priority,

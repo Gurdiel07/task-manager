@@ -30,9 +30,9 @@ export async function GET(
     const badge = await db.badge.findUnique({
       where: { id },
       include: {
-        userBadges: {
+        users: {
           include: { user: { select: { id: true, name: true, email: true, image: true } } },
-          orderBy: { awardedAt: "desc" },
+          orderBy: { earnedAt: "desc" },
         },
       },
     });

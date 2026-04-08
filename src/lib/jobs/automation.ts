@@ -1,12 +1,8 @@
-import type { Job } from "bullmq";
 import { db } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { AutomationTrigger, Priority, TicketStatus } from "@/generated/prisma/client";
 
-interface AutomationJobData {
-  ticketId: string;
-  trigger: "TICKET_CREATED" | "TICKET_UPDATED" | "STATUS_CHANGED";
-}
+export type AutomationTriggerInput = "TICKET_CREATED" | "TICKET_UPDATED" | "STATUS_CHANGED";
 
 interface CompiledRuleCondition {
   field: string;
@@ -49,9 +45,11 @@ function evaluateCondition(
     case "not_equals":
       return fieldValue !== condition.value;
     case "contains":
-      return typeof fieldValue === "string" &&
+      return (
+        typeof fieldValue === "string" &&
         typeof condition.value === "string" &&
-        fieldValue.toLowerCase().includes(condition.value.toLowerCase());
+        fieldValue.toLowerCase().includes(condition.value.toLowerCase())
+      );
     case "in":
       return Array.isArray(condition.value) && condition.value.includes(fieldValue);
     default:
@@ -66,9 +64,10 @@ function evaluateConditions(
   return conditions.every((c) => evaluateCondition(ticket, c));
 }
 
-export default async function automationProcessor(job: Job<AutomationJobData>) {
-  const { ticketId, trigger } = job.data;
-
+export async function runAutomation(
+  ticketId: string,
+  trigger: AutomationTriggerInput
+): Promise<void> {
   const ticket = await db.ticket.findFirst({
     where: { id: ticketId, deletedAt: null },
     include: {
@@ -172,7 +171,8 @@ export default async function automationProcessor(job: Job<AutomationJobData>) {
                   userId: targetUserId,
                   type: "SYSTEM",
                   title: action.title ?? "Automation Notification",
-                  message: action.message ?? `Automation rule "${rule.name}" triggered`,
+                  message:
+                    action.message ?? `Automation rule "${rule.name}" triggered`,
                   link: `/tickets/${ticketId}`,
                 },
               });
@@ -185,7 +185,10 @@ export default async function automationProcessor(job: Job<AutomationJobData>) {
     } catch (err) {
       status = "FAILED";
       result.error = err instanceof Error ? err.message : String(err);
-      console.error(`[Automation] Rule ${rule.id} failed for ticket ${ticketId}:`, err);
+      console.error(
+        `[Automation] Rule ${rule.id} failed for ticket ${ticketId}:`,
+        err
+      );
     }
 
     await db.automationExecution.create({

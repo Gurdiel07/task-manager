@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // ===== ENUMS =====
@@ -141,12 +141,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -242,9 +242,9 @@ model TeamMember {
 
 model Ticket {
   id              String        @id @default(cuid())
-  number          Int           @unique @default(autoincrement())
+  number          Int           @unique
   title           String
-  description     String        @db.Text
+  description     String
   status          TicketStatus  @default(OPEN)
   priority        Priority      @default(MEDIUM)
   category        String?
@@ -294,7 +294,7 @@ model TicketComment {
   id         String   @id @default(cuid())
   ticketId   String
   userId     String
-  content    String   @db.Text
+  content    String
   isInternal Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -386,7 +386,7 @@ model TicketRelation {
 model WorkflowTemplate {
   id          String    @id @default(cuid())
   name        String
-  description String?   @db.Text
+  description String?
   category    String?
   isActive    Boolean   @default(true)
   createdById String
@@ -494,7 +494,7 @@ model WorkflowSnapshot {
 model Task {
   id                     String     @id @default(cuid())
   title                  String
-  description            String?    @db.Text
+  description            String?
   status                 TaskStatus @default(TODO)
   priority               Priority   @default(MEDIUM)
   ticketId               String?
@@ -624,7 +624,7 @@ model ChannelMessage {
   ticketId         String?
   direction        MessageDirection
   senderIdentifier String
-  content          String           @db.Text
+  content          String
   metadata         Json?
   processedAt      DateTime?
   createdAt        DateTime         @default(now())
@@ -653,7 +653,7 @@ model KBCategory {
 model KBArticle {
   id           String        @id @default(cuid())
   title        String
-  content      String        @db.Text
+  content      String
   categoryId   String?
   authorId     String
   status       ArticleStatus @default(DRAFT)
@@ -727,7 +727,7 @@ model AutomationRule {
   id                 String            @id @default(cuid())
   name               String
   description        String?
-  naturalLanguageRule String            @db.Text
+  naturalLanguageRule String
   compiledRule       Json
   triggerType        AutomationTrigger
   isActive           Boolean           @default(true)

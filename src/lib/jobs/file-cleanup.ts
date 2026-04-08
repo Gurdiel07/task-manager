@@ -1,4 +1,3 @@
-import type { Job } from "bullmq";
 import fs from "fs/promises";
 import path from "path";
 import { db } from "@/lib/db";
@@ -41,7 +40,7 @@ async function removeEmptyDirs(dir: string): Promise<void> {
   }
 }
 
-export default async function fileCleanupProcessor(_job: Job) {
+export async function cleanupOrphanedFiles(): Promise<void> {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   const allFiles = await collectFiles(uploadsDir);
 
@@ -68,5 +67,5 @@ export default async function fileCleanupProcessor(_job: Job) {
 
   await removeEmptyDirs(uploadsDir);
 
-  console.log(`Cleaned up ${cleanedCount} orphaned files`);
+  console.log(`[FileCleanup] Removed ${cleanedCount} orphaned files`);
 }

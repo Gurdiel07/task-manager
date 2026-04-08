@@ -505,8 +505,8 @@ export function TicketDetailClient({
                             <span className="truncate text-sm font-medium">{task.title}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            {task.priority && <PriorityBadge priority={task.priority} />}
-                            <StatusBadge status={task.status} />
+                            {task.priority && <PriorityBadge priority={task.priority as import("@/generated/prisma/client").Priority} />}
+                            <StatusBadge status={task.status as import("@/generated/prisma/client").TaskStatus} />
                           </div>
                         </Link>
                       ))}

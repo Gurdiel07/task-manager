@@ -2,7 +2,7 @@ FROM node:20-alpine AS base
 
 # --- Dependencies ---
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -51,9 +51,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_m
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
-# BullMQ and ioredis (pure JS — needed at runtime for background job processing)
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bullmq ./node_modules/bullmq
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/ioredis ./node_modules/ioredis
+# SQLite adapter and native module (better-sqlite3 is a native addon)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
+
+# Data directory for SQLite database
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 
 # Entrypoint: runs db push then starts the server
 COPY --chown=nextjs:nodejs docker/docker-entrypoint.sh ./docker-entrypoint.sh

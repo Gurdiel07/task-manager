@@ -7,8 +7,7 @@ services:
       - "3000:3000"
       - "3001:3001"
     environment:
-      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/taskmanager?schema=public"
-      REDIS_URL: "redis://redis:6379"
+      DATABASE_URL: "file:./data/taskmanager.db"
       NEXTAUTH_URL: "http://localhost:3000"
       NEXTAUTH_SECRET: "change-me-use-openssl-rand-base64-32"
       SOCKET_PORT: "3001"
@@ -16,11 +15,9 @@ services:
       SMTP_PORT: "1025"
       SMTP_FROM: "Task Manager <noreply@taskmanager.local>"
       SMTP_SECURE: "false"
+    volumes:
+      - sqlite_data:/app/data
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       mailpit:
         condition: service_started
     healthcheck:
@@ -31,36 +28,6 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: taskmanager
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d taskmanager"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
   mailpit:
     image: axllent/mailpit:latest
     ports:
@@ -69,5 +36,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
+  sqlite_data:

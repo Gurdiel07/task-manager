@@ -12,7 +12,7 @@ import {
   createTicketSchema,
   ticketListQuerySchema,
 } from "@/lib/validators/ticket";
-import { automationQueue } from "@/lib/queue/queues";
+import { runAutomation } from "@/lib/jobs/automation";
 import { queueEmail } from "@/lib/email/send";
 
 export async function GET(request: NextRequest) {
@@ -96,8 +96,12 @@ export async function POST(request: Request) {
     const payload = validated.data;
 
     const ticket = await db.$transaction(async (tx) => {
+      const last = await tx.ticket.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
+      const nextNumber = (last?.number ?? 0) + 1;
+
       const createdTicket = await tx.ticket.create({
         data: {
+          number: nextNumber,
           title: payload.title,
           description: payload.description,
           priority: payload.priority,
@@ -145,14 +149,7 @@ export async function POST(request: Request) {
       // Socket.io failures must not break API responses
     }
 
-    try {
-      await automationQueue.add("automation", {
-        ticketId: ticket.id,
-        trigger: "TICKET_CREATED",
-      });
-    } catch {
-      // Queue failures must not break API responses
-    }
+    runAutomation(ticket.id, "TICKET_CREATED").catch(console.error);
 
     const ticketUrl = `${process.env.NEXTAUTH_URL ?? ""}/tickets/${ticket.id}`;
 

@@ -6,12 +6,10 @@ export async function register() {
     await initializeRealtimeServer();
 
     try {
-      const { startWorkers } = await import("@/lib/queue/worker-manager");
-      const { scheduleRecurringJobs } = await import("@/lib/queue/scheduler");
-      startWorkers();
-      await scheduleRecurringJobs();
+      const { startScheduler } = await import("@/lib/jobs/scheduler");
+      startScheduler();
     } catch (err) {
-      console.warn("[Instrumentation] Failed to start background workers:", err);
+      console.warn("[Instrumentation] Failed to start background scheduler:", err);
     }
   }
 }

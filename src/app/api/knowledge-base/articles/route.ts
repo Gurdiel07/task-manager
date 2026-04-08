@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status;
     if (categoryId) where.categoryId = categoryId;
     if (search) {
-      where.title = { contains: search, mode: "insensitive" };
+      where.title = { contains: search };
     }
 
     const skip = (page - 1) * limit;

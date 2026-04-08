@@ -1,12 +1,14 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
+function getDbPath(): string {
+  const url = process.env.DATABASE_URL ?? "file:./data/taskmanager.db";
+  return url.startsWith("file:") ? url.slice(5) : url;
+}
 
+const adapter = new PrismaBetterSqlite3({ url: getDbPath() });
 const prisma = new PrismaClient({ adapter });
 
 function daysAgo(days: number) {
@@ -162,9 +164,10 @@ async function main() {
   ];
 
   const tickets = [];
+  let ticketNumber = 1;
   for (const t of ticketData) {
     const { tagIndices, ...data } = t;
-    const ticket = await prisma.ticket.create({ data });
+    const ticket = await prisma.ticket.create({ data: { ...data, number: ticketNumber++ } });
     if (tagIndices.length) {
       await prisma.ticketTagRelation.createMany({
         data: tagIndices.map((i) => ({ ticketId: ticket.id, tagId: tags[i].id })),

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const { to, subject, message } = validated.data;
 
-    await queueEmail({
+    queueEmail({
       type: "custom",
       to,
       data: { message: message ?? "This is a test email from Task Manager." },
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       html: `<p style="font-family:sans-serif;font-size:15px;color:#3f3f46;">${message ?? "This is a test email from Task Manager."}</p>`,
     });
 
-    return apiSuccess({ queued: true }, { message: "Test email queued successfully" });
+    return apiSuccess({ sent: true }, { message: "Test email sent successfully" });
   } catch (error) {
     console.error("Failed to queue test email:", error);
     return apiError("Internal server error", {

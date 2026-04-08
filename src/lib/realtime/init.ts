@@ -1,41 +1,12 @@
 import { createServer } from "node:http";
 import { Server as IOServer } from "socket.io";
 import type { Socket } from "socket.io";
+import { decode } from "next-auth/jwt";
 import { setIO } from "./socket-server";
 
 const SOCKET_PORT = Number(process.env.SOCKET_PORT ?? 3001);
 
 let initialized = false;
-
-async function attachRedisAdapter(io: IOServer) {
-  try {
-    const { Redis } = await import("ioredis");
-    const { createAdapter } = await import("@socket.io/redis-adapter");
-
-    const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
-    const pubClient = new Redis(redisUrl);
-    const subClient = pubClient.duplicate();
-
-    await Promise.all([
-      new Promise<void>((resolve, reject) => {
-        pubClient.once("ready", resolve);
-        pubClient.once("error", reject);
-      }),
-      new Promise<void>((resolve, reject) => {
-        subClient.once("ready", resolve);
-        subClient.once("error", reject);
-      }),
-    ]);
-
-    io.adapter(createAdapter(pubClient, subClient));
-    console.log("[socket] Redis adapter connected");
-  } catch (error) {
-    console.warn(
-      "[socket] Redis unavailable, falling back to in-memory adapter:",
-      error instanceof Error ? error.message : error
-    );
-  }
-}
 
 async function authenticateSocket(socket: Socket): Promise<string | null> {
   try {
@@ -49,24 +20,26 @@ async function authenticateSocket(socket: Socket): Promise<string | null> {
       })
     );
 
-    const sessionToken =
-      cookies["__Secure-authjs.session-token"] ??
-      cookies["authjs.session-token"] ??
-      cookies["next-auth.session-token"];
+    const secureCookieName = "__Secure-authjs.session-token";
+    const devCookieName = "authjs.session-token";
 
-    if (!sessionToken) return null;
+    const cookieName = cookies[secureCookieName]
+      ? secureCookieName
+      : devCookieName;
+    const cookieValue = cookies[cookieName];
 
-    const { db } = await import("@/lib/db");
+    if (!cookieValue) return null;
 
-    const session = await db.session.findFirst({
-      where: {
-        sessionToken,
-        expires: { gt: new Date() },
-      },
-      select: { userId: true },
+    const decoded = await decode({
+      token: cookieValue,
+      secret: process.env.NEXTAUTH_SECRET ?? "",
+      salt: cookieName,
     });
 
-    return session?.userId ?? null;
+    if (!decoded) return null;
+
+    const userId = (decoded.id as string | undefined) ?? decoded.sub;
+    return userId ?? null;
   } catch (error) {
     console.error("[socket] Auth error:", error);
     return null;
@@ -114,7 +87,6 @@ export async function initializeRealtimeServer() {
     transports: ["websocket", "polling"],
   });
 
-  await attachRedisAdapter(io);
   setIO(io);
 
   io.on("connection", async (socket) => {

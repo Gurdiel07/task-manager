@@ -1,4 +1,7 @@
-.PHONY: dev test test-watch test-coverage lint typecheck build docker-up docker-down seed db-push db-studio reset
+.PHONY: setup dev test test-watch test-coverage lint typecheck build docker-up docker-down seed db-push db-studio reset
+
+setup:
+	node scripts/setup.mjs
 
 dev:
 	npm run dev
@@ -37,8 +40,6 @@ db-studio:
 	npx prisma studio
 
 reset:
-	docker compose -f docker/docker-compose.yml down -v
-	docker compose -f docker/docker-compose.yml up -d
-	sleep 3
+	rm -f data/taskmanager.db
 	npx prisma db push
 	npx prisma db seed

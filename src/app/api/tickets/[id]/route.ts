@@ -8,7 +8,7 @@ import {
   ticketDetailInclude,
 } from "@/lib/ticket-api";
 import { updateTicketSchema } from "@/lib/validators/ticket";
-import { automationQueue } from "@/lib/queue/queues";
+import { runAutomation } from "@/lib/jobs/automation";
 import { queueEmail } from "@/lib/email/send";
 
 type TicketRouteContext = {
@@ -158,24 +158,12 @@ export async function PUT(request: Request, context: TicketRouteContext) {
       // Socket.io failures must not break API responses
     }
 
-    try {
-      const statusChanged =
-        validated.data.status !== undefined &&
-        validated.data.status !== existingTicket.status;
-
-      await automationQueue.add("automation", {
-        ticketId: id,
-        trigger: "TICKET_UPDATED",
-      });
-
-      if (statusChanged) {
-        await automationQueue.add("automation", {
-          ticketId: id,
-          trigger: "STATUS_CHANGED",
-        });
-      }
-    } catch {
-      // Queue failures must not break API responses
+    runAutomation(id, "TICKET_UPDATED").catch(console.error);
+    if (
+      validated.data.status !== undefined &&
+      validated.data.status !== existingTicket.status
+    ) {
+      runAutomation(id, "STATUS_CHANGED").catch(console.error);
     }
 
     // Email notifications for assignment/status changes

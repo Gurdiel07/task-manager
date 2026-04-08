@@ -47,18 +47,8 @@ export async function GET(request: NextRequest) {
         ...(validated.data.search
           ? {
               OR: [
-                {
-                  name: {
-                    contains: validated.data.search,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  email: {
-                    contains: validated.data.search,
-                    mode: "insensitive",
-                  },
-                },
+                { name: { contains: validated.data.search } },
+                { email: { contains: validated.data.search } },
               ],
             }
           : {}),
