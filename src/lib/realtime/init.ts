@@ -77,11 +77,8 @@ export async function initializeRealtimeServer() {
 
   const io = new IOServer(httpServer, {
     cors: {
-      origin: [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        process.env.NEXTAUTH_URL ?? "",
-      ].filter(Boolean),
+      // Allow any origin on the local network — auth is still enforced via JWT cookie
+      origin: (_origin, callback) => callback(null, true),
       credentials: true,
     },
     transports: ["websocket", "polling"],

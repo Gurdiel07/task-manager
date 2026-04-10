@@ -138,6 +138,65 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## LAN Deployment
+
+Deploy once on a company server so all employees can access it from their browsers — no installation needed on employee machines.
+
+### Requirements
+
+- One PC or server on the company network running Node.js 18+
+- The machine must stay on while the app is in use
+
+### Installation (IT person, one time)
+
+1. Clone or copy the project to the server
+2. Run the setup script — it will auto-detect the server's network IP and configure the app:
+
+```bash
+# macOS / Linux
+./scripts/setup.sh
+
+# Windows / cross-platform
+node scripts/setup.mjs
+```
+
+3. Start the production server:
+
+```bash
+# Foreground (stop with Ctrl+C)
+npm run start:lan
+
+# Background (keeps running after terminal closes)
+npm run start:bg
+npm run stop          # to stop it later
+```
+
+The setup will display the URL, for example: `http://192.168.1.50:3000`
+
+### For employees
+
+Open a web browser and go to the URL provided by IT (e.g. `http://192.168.1.50:3000`). No installation or configuration needed.
+
+### Auto-start on boot (optional)
+
+**macOS** — create a LaunchAgent plist in `~/Library/LaunchAgents/`:
+```xml
+<key>ProgramArguments</key>
+<array>
+  <string>/bin/bash</string>
+  <string>/path/to/task-manager/scripts/start-background.sh</string>
+</array>
+```
+
+**Linux** — add a systemd service or use `@reboot` in crontab:
+```bash
+@reboot cd /path/to/task-manager && npm run start:bg
+```
+
+**Windows** — place a shortcut to `scripts/start.bat` in the Startup folder (`shell:startup`).
+
+---
+
 ## Configuration
 
 All configuration is done via `.env`. Copy `.env.example` to `.env` to get started (the setup script does this automatically).
@@ -202,7 +261,10 @@ src/
 | `npm run setup` | Interactive setup wizard (install deps, create DB, optional seed) |
 | `npm run dev` | Start development server with Turbopack |
 | `npm run build` | Production build |
-| `npm run start` | Start production server |
+| `npm run start` | Start production server (foreground) |
+| `npm run start:lan` | Build then start production server |
+| `npm run start:bg` | Build and run in background (LAN deployment) |
+| `npm run stop` | Stop background server |
 | `npm test` | Run all tests |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:coverage` | Run tests with coverage report |

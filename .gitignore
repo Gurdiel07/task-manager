@@ -57,6 +57,10 @@ prisma/*.db-journal
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# production runtime
+.taskmanager.pid
+taskmanager.log
+
 # IDE
 .vscode/
 *.swp

@@ -3,6 +3,7 @@ import { execSync } from "child_process";
 import { existsSync, copyFileSync, readFileSync, writeFileSync } from "fs";
 import { randomBytes } from "crypto";
 import { createInterface } from "readline";
+import { networkInterfaces } from "os";
 
 function run(cmd) {
   console.log(`> ${cmd}`);
@@ -17,6 +18,18 @@ function ask(question) {
       resolve(answer);
     });
   });
+}
+
+function detectLanIp() {
+  const nets = networkInterfaces();
+  for (const iface of Object.values(nets)) {
+    for (const net of iface ?? []) {
+      if (net.family === "IPv4" && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return "localhost";
 }
 
 console.log("");
@@ -53,6 +66,22 @@ if (!existsSync(".env")) {
   console.log("✓ .env already exists");
 }
 
+// Detect LAN IP and configure NEXTAUTH_URL
+console.log("");
+let lanIp = detectLanIp();
+console.log(`Detected network IP: ${lanIp}`);
+const useDetected = await ask("Use this IP for network access? (Y/n) ");
+
+if (useDetected.trim().toLowerCase() === "n") {
+  lanIp = await ask("Enter the server IP address or hostname: ");
+  lanIp = lanIp.trim();
+}
+
+let env = readFileSync(".env", "utf-8");
+env = env.replace(/NEXTAUTH_URL=.*/, `NEXTAUTH_URL="http://${lanIp}:3000"`);
+writeFileSync(".env", env);
+console.log(`✓ Network URL set to http://${lanIp}:3000`);
+
 // Generate Prisma client and set up database
 console.log("");
 console.log("Setting up database...");
@@ -72,7 +101,10 @@ if (answer.trim().toLowerCase() === "y") {
 console.log("");
 console.log("===================================");
 console.log("  Setup complete!");
-console.log("  Run: npm run dev");
-console.log("  Open: http://localhost:3000");
+console.log("");
+console.log("  Development:  npm run dev");
+console.log("  Production:   node scripts/start.mjs");
+console.log("");
+console.log(`  Access URL:   http://${lanIp}:3000`);
 console.log("===================================");
 console.log("");

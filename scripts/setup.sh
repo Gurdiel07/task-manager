@@ -41,6 +41,28 @@ else
     echo "✓ .env already exists"
 fi
 
+# Detect LAN IP and configure NEXTAUTH_URL
+echo ""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    LAN_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "localhost")
+else
+    LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+fi
+
+echo "Detected network IP: $LAN_IP"
+read -p "Use this IP for network access? (Y/n) " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Nn]$ ]]; then
+    read -p "Enter the server IP address or hostname: " LAN_IP
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=\"http://$LAN_IP:3000\"|" .env
+else
+    sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=\"http://$LAN_IP:3000\"|" .env
+fi
+echo "✓ Network URL set to http://$LAN_IP:3000"
+
 # Generate Prisma client and set up database
 echo ""
 echo "Setting up database..."
@@ -61,7 +83,10 @@ fi
 echo ""
 echo "==================================="
 echo "  Setup complete!"
-echo "  Run: npm run dev"
-echo "  Open: http://localhost:3000"
+echo ""
+echo "  Development:  npm run dev"
+echo "  Production:   ./scripts/start.sh"
+echo ""
+echo "  Access URL:   http://$LAN_IP:3000"
 echo "==================================="
 echo ""
