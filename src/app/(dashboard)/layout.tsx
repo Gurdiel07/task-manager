@@ -29,7 +29,7 @@ export default async function DashboardLayout({
         <AppSidebar user={user} />
         <SidebarInset>
           <Topbar />
-          <main className="flex-1 overflow-auto p-6 dark:bg-gradient-to-br dark:from-background dark:to-background/95">{children}</main>
+          <main className="min-w-0 flex-1 overflow-auto p-6 dark:bg-gradient-to-br dark:from-background dark:to-background/95">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </SocketWrapper>
